@@ -8,12 +8,20 @@
     "text2image": "ts-node scripts/text2image.ts",
     "text2video": "ts-node scripts/text2video.ts"
   },
-  "keywords": ["jimeng", "volcengine", "ai", "image-generation", "video-generation", "skill"],
+  "keywords": [
+    "jimeng",
+    "volcengine",
+    "ai",
+    "image-generation",
+    "video-generation",
+    "skill"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.0",
-    "crypto-js": "^4.2.0"
+    "crypto-js": "^4.2.0",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.0",

@@ -390,3 +390,4 @@ MigrationBackup/
 *.db
 *.db-shm
 *.db-wal
+/jimeng-content-generator/output

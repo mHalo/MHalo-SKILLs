@@ -25,11 +25,21 @@ export const REQ_KEYS = {
   I2I_V30: 'jimeng_i2i_v30',
   I2I_SEED3: 'jimeng_i2i_seed3_tilesr_cvtob',
   I2I_INPAINT: 'jimeng_image2image_dream_inpaint',
-  // 视频
+  // 视频 - 文生视频
+  T2V_V30: 'jimeng_t2v_v30',
   T2V_V30_1080P: 'jimeng_t2v_v30_1080p',
-  I2V_FIRST_V30: 'jimeng_i2v_first_v30_1080',
-  I2V_FIRST_TAIL_V30: 'jimeng_i2v_first_tail_v30_1080',
+  // 视频 - 图生视频-首帧
+  I2V_FIRST_V30: 'jimeng_i2v_first_v30',
+  I2V_FIRST_V30_1080: 'jimeng_i2v_first_v30_1080',
+  // 视频 - 图生视频-首尾帧
+  I2V_FIRST_TAIL_V30: 'jimeng_i2v_first_tail_v30',
+  I2V_FIRST_TAIL_V30_1080: 'jimeng_i2v_first_tail_v30_1080',
+  // 视频 - Pro版本
   TI2V_V30_PRO: 'jimeng_ti2v_v30_pro',
+  // 视频 - 3.5 Pro（音画同步）
+  T2V_V35_PRO: 'jimeng-video-3.5-pro',
+  T2V_V35_PRO_10S: 'jimeng-video-3.5-pro-10s',
+  T2V_V35_PRO_12S: 'jimeng-video-3.5-pro-12s',
   // 数字人
   DREAM_ACTOR_M1: 'jimeng_dream_actor_m1_gen_video_cv',
   DREAM_ACTOR_M20: 'jimeng_dreamactor_m20_gen_video',

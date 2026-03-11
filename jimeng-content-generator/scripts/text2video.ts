@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 /**
- * 文生视频脚本 - Text to Video
- * 支持即梦AI v3.0 文生视频API
+ * 视频生成脚本 - Text/Image to Video
+ * 支持即梦AI v3.0 文生视频/图生视频/首尾帧视频API
  *
  * 用法: ts-node text2video.ts "提示词" [选项]
  *
@@ -10,14 +10,24 @@
  *   --duration <时长>        视频时长: 5 或 10 秒 (默认: 5)
  *   --fps <帧率>             视频帧率: 24 或 30 (默认: 24)
  *   --output <目录>          视频下载目录 (默认: ./output)
+ *   --first-frame <图片>     首帧图片路径或URL（图生视频时使用）
+ *   --last-frame <图片>      尾帧图片路径或URL（首尾帧视频时使用）
  *   --no-download            不下载视频，只返回URL
  *   --wait                   等待任务完成
  *   --debug                  开启调试模式
  *
  * 示例:
+ *   # 文生视频
  *   ts-node text2video.ts "一只可爱的猫咪在草地上奔跑"
+ *   
+ *   # 图生视频（首帧）
+ *   ts-node text2video.ts "一只猫咪在奔跑" --first-frame ./cat.jpg
+ *   
+ *   # 首尾帧视频
+ *   ts-node text2video.ts "猫咪变身" --first-frame ./cat.jpg --last-frame ./tiger.jpg
+ *   
+ *   # 其他参数
  *   ts-node text2video.ts "元宵节灯笼" --ratio 9:16 --duration 5
- *   ts-node text2video.ts "科幻城市夜景" --ratio 16:9 --duration 10 --fps 30
  */
 
 import * as path from 'path';
@@ -83,6 +93,30 @@ interface Text2VideoOptions {
   download: boolean;
   wait: boolean;
   debug: boolean;
+  firstFrame?: string;  // 首帧图片路径或URL
+  lastFrame?: string;   // 尾帧图片路径或URL
+}
+
+// 视频生成模式
+type VideoMode = 'text2video' | 'image2video' | 'firstLastFrame';
+
+// 获取模式对应的 req_key
+function getReqKey(mode: VideoMode, resolution: '720p' | '1080p' = '1080p'): string {
+  const keyMap = {
+    text2video: {
+      '720p': REQ_KEYS.T2V_V30,
+      '1080p': REQ_KEYS.T2V_V30_1080P
+    },
+    image2video: {
+      '720p': REQ_KEYS.I2V_FIRST_V30,
+      '1080p': REQ_KEYS.I2V_FIRST_V30_1080
+    },
+    firstLastFrame: {
+      '720p': REQ_KEYS.I2V_FIRST_TAIL_V30,
+      '1080p': REQ_KEYS.I2V_FIRST_TAIL_V30_1080
+    }
+  };
+  return keyMap[mode][resolution] || keyMap[mode]['1080p'];
 }
 
 /**
@@ -261,11 +295,18 @@ function parseArgs(): Text2VideoOptions {
     console.error('  --duration <时长>        视频时长: 5 或 10 秒 (默认: 5)');
     console.error('  --fps <帧率>             视频帧率: 24 或 30 (默认: 24)');
     console.error('  --output <目录>          视频下载目录 (默认: ./output)');
+    console.error('  --first-frame <图片>     首帧图片路径或URL');
+    console.error('  --last-frame <图片>      尾帧图片路径或URL（需要同时提供首帧）');
     console.error('  --no-download            不下载视频，只返回URL');
     console.error('  --wait                   等待任务完成');
     console.error('  --debug                  开启调试模式');
     console.error('');
     console.error('支持的宽高比: ' + VALID_VIDEO_RATIOS.join(', '));
+    console.error('');
+    console.error('使用模式:');
+    console.error('  1. 文生视频: 只提供提示词');
+    console.error('  2. 图生视频: 提供 --first-frame');
+    console.error('  3. 首尾帧视频: 提供 --first-frame 和 --last-frame');
     console.error('');
     console.error('环境变量:');
     console.error('  VOLCENGINE_AK  火山引擎 Access Key');
@@ -281,6 +322,8 @@ function parseArgs(): Text2VideoOptions {
   let download = true;
   let wait = false;
   let debug = false;
+  let firstFrame: string | undefined;
+  let lastFrame: string | undefined;
 
   for (let i = 1; i < args.length; i++) {
     switch (args[i]) {
@@ -307,6 +350,12 @@ function parseArgs(): Text2VideoOptions {
       case '--output':
         outputDir = args[++i];
         break;
+      case '--first-frame':
+        firstFrame = args[++i];
+        break;
+      case '--last-frame':
+        lastFrame = args[++i];
+        break;
       case '--no-download':
         download = false;
         break;
@@ -320,7 +369,12 @@ function parseArgs(): Text2VideoOptions {
     }
   }
 
-  return { prompt, ratio, duration, fps, outputDir, download, wait, debug };
+  // 验证参数
+  if (lastFrame && !firstFrame) {
+    throw new Error('使用 --last-frame 时必须同时提供 --first-frame');
+  }
+
+  return { prompt, ratio, duration, fps, outputDir, download, wait, debug, firstFrame, lastFrame };
 }
 
 /**
@@ -354,12 +408,112 @@ function isAbsolutePath(inputPath: string): boolean {
 }
 
 /**
+ * 检测字符串是否为URL
+ */
+function isUrl(str: string): boolean {
+  return str.startsWith('http://') || str.startsWith('https://');
+}
+
+/**
+ * 读取图片文件并转为Base64（不含data URI前缀）
+ */
+function imageToBase64(imagePath: string): string {
+  // 如果是绝对路径，直接使用；否则相对于当前工作目录
+  const fullPath = path.isAbsolute(imagePath) ? imagePath : path.join(process.cwd(), imagePath);
+  
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`图片文件不存在: ${fullPath}`);
+  }
+  
+  const imageBuffer = fs.readFileSync(fullPath);
+  return imageBuffer.toString('base64');
+}
+
+interface ProcessedImages {
+  imageUrls?: string[];
+  binaryDataBase64?: string[];
+}
+
+/**
+ * 处理图片输入（URL或本地路径）
+ * 即梦API支持两种方式：
+ * 1. image_urls: 可公开访问的图片URL数组
+ * 2. binary_data_base64: 图片的Base64编码数组
+ */
+function processImageInput(imageInput: string | undefined, fieldName: string): string | undefined {
+  if (!imageInput) return undefined;
+  
+  // 如果是URL，直接使用
+  if (isUrl(imageInput)) {
+    return imageInput;
+  }
+  
+  // 本地路径 - 检查文件是否存在
+  const fullPath = path.isAbsolute(imageInput) ? imageInput : path.join(process.cwd(), imageInput);
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`${fieldName} 指定的文件不存在: ${fullPath}`);
+  }
+  
+  // 返回本地路径，后续会处理为Base64
+  return imageInput;
+}
+
+/**
+ * 处理首帧和尾帧图片，决定使用哪种方式上传
+ * 策略：如果有本地文件，使用 binary_data_base64；如果全是URL，使用 image_urls
+ */
+function processImages(firstFrame?: string, lastFrame?: string): ProcessedImages {
+  const result: ProcessedImages = {};
+  
+  if (!firstFrame && !lastFrame) {
+    return result;
+  }
+  
+  // 检查是否有本地文件
+  const hasLocalFile = (input?: string) => input !== undefined && !isUrl(input);
+  const useBase64 = hasLocalFile(firstFrame) || hasLocalFile(lastFrame);
+  
+  if (useBase64) {
+    // 使用 binary_data_base64
+    result.binaryDataBase64 = [];
+    if (firstFrame) {
+      result.binaryDataBase64.push(isUrl(firstFrame) ? firstFrame : imageToBase64(firstFrame));
+    }
+    if (lastFrame) {
+      result.binaryDataBase64.push(isUrl(lastFrame) ? lastFrame : imageToBase64(lastFrame));
+    }
+  } else {
+    // 使用 image_urls
+    result.imageUrls = [];
+    if (firstFrame) result.imageUrls.push(firstFrame);
+    if (lastFrame) result.imageUrls.push(lastFrame);
+  }
+  
+  return result;
+}
+
+/**
  * 获取任务文件夹路径
- * 使用 md5(提示词+参数) 作为子文件夹名
+ * 使用 md5(提示词+参数+图片) 作为子文件夹名
  * 包含路径遍历防护
  */
-function getTaskFolderPath(prompt: string, ratio: string, duration: number, fps: number, baseOutputDir: string): string {
-  const hashInput = `${prompt}_${ratio}_${duration}_${fps}`;
+function getTaskFolderPath(
+  prompt: string, 
+  ratio: string, 
+  duration: number, 
+  fps: number, 
+  firstFrame: string | undefined,
+  lastFrame: string | undefined,
+  baseOutputDir: string
+): string {
+  // 构建hash输入，包含图片信息
+  let hashInput = `${prompt}_${ratio}_${duration}_${fps}`;
+  if (firstFrame) {
+    hashInput += `_first_${firstFrame}`;
+  }
+  if (lastFrame) {
+    hashInput += `_last_${lastFrame}`;
+  }
   const hash = md5Hash(hashInput);
   
   // 如果 baseOutputDir 是绝对路径，直接使用
@@ -463,18 +617,53 @@ async function main(): Promise<void> {
     const { accessKey, secretKey, securityToken } = getCredentials();
     const options = parseArgs();
 
-    // 文生视频使用固定的 req_key
-    const reqKey = REQ_KEYS.T2V_V30_1080P;
+    // 确定生成模式
+    let mode: VideoMode = 'text2video';
+    if (options.firstFrame && options.lastFrame) {
+      mode = 'firstLastFrame';
+    } else if (options.firstFrame) {
+      mode = 'image2video';
+    }
 
-    // 构建请求体 - 文生视频
-    // aspect_ratio 需要是字符串格式，如 "9:16"
+    // 根据模式选择 req_key
+    const reqKey = getReqKey(mode);
+
+    if (process.env.DEBUG) {
+      console.error(`生成模式: ${mode}, req_key: ${reqKey}`);
+    }
+
+    // 处理图片输入（支持URL和本地路径）
+    processImageInput(options.firstFrame, '--first-frame');
+    processImageInput(options.lastFrame, '--last-frame');
+    
+    // 处理图片，决定使用哪种上传方式
+    const processedImages = processImages(options.firstFrame, options.lastFrame);
+
+    // 构建请求体
     const body: Record<string, any> = {
       req_key: reqKey,
-      prompt: options.prompt,
-      aspect_ratio: options.ratio,
-      duration: options.duration,
-      fps: options.fps
+      prompt: options.prompt
     };
+
+    // 根据模式添加参数
+    if (mode === 'text2video') {
+      // 文生视频参数
+      body.aspect_ratio = options.ratio;
+      body.duration = options.duration;
+      body.fps = options.fps;
+    } else {
+      // 图生视频/首尾帧参数
+      if (processedImages.binaryDataBase64) {
+        // 使用 Base64 上传本地图片
+        body.binary_data_base64 = processedImages.binaryDataBase64;
+      } else if (processedImages.imageUrls) {
+        // 使用 URL
+        body.image_urls = processedImages.imageUrls;
+      }
+      body.duration = options.duration;
+      body.fps = options.fps;
+      // 图生视频的比例由图片决定，不需要传 aspect_ratio
+    }
 
     // 计算任务文件夹路径（用于保存任务状态）
     const taskFolderPath = getTaskFolderPath(
@@ -482,6 +671,8 @@ async function main(): Promise<void> {
       options.ratio,
       options.duration,
       options.fps,
+      options.firstFrame,
+      options.lastFrame,
       options.outputDir
     );
 
@@ -518,6 +709,7 @@ async function main(): Promise<void> {
             const successResult: any = {
               success: true,
               prompt: options.prompt,
+              mode: mode,
               ratio: options.ratio,
               duration: options.duration,
               fps: options.fps,
@@ -530,14 +722,22 @@ async function main(): Promise<void> {
               successResult.videoPath = videoPath;
             }
             
+            if (options.firstFrame) {
+              successResult.firstFrame = options.firstFrame;
+            }
+            if (options.lastFrame) {
+              successResult.lastFrame = options.lastFrame;
+            }
+            
             console.log(JSON.stringify(successResult, null, 2));
             return;
           } else if (status === 'processing' || status === 'in_queue' || status === 'generating') {
             console.error(`任务处理中，当前状态: ${status}，TaskId: ${taskId}`);
-            const pendingResult = {
+            const pendingResult: any = {
               success: true,
               pending: true,
               prompt: options.prompt,
+              mode: mode,
               ratio: options.ratio,
               duration: options.duration,
               fps: options.fps,
@@ -545,6 +745,13 @@ async function main(): Promise<void> {
               status,
               message: '任务处理中，请稍后使用相同提示词查询结果'
             };
+            
+            if (options.firstFrame) {
+              pendingResult.firstFrame = options.firstFrame;
+            }
+            if (options.lastFrame) {
+              pendingResult.lastFrame = options.lastFrame;
+            }
             console.log(JSON.stringify(pendingResult, null, 2));
             return;
           }
@@ -566,14 +773,23 @@ async function main(): Promise<void> {
     // 创建文件夹并保存任务信息
     fs.mkdirSync(taskFolderPath, { recursive: true });
 
-    const paramData = {
+    const paramData: Record<string, any> = {
       prompt: options.prompt,
+      mode: mode,
       ratio: options.ratio,
       duration: options.duration,
       fps: options.fps,
       req_key: reqKey,
       timestamp: new Date().toISOString()
     };
+    
+    // 记录图片信息（不保存实际内容）
+    if (options.firstFrame) {
+      paramData.firstFrame = options.firstFrame;
+    }
+    if (options.lastFrame) {
+      paramData.lastFrame = options.lastFrame;
+    }
 
     saveTaskInfo(taskFolderPath, paramData, { taskId, requestId }, taskId);
 
@@ -604,6 +820,7 @@ async function main(): Promise<void> {
           const successResult: any = {
             success: true,
             prompt: options.prompt,
+            mode: mode,
             ratio: options.ratio,
             duration: options.duration,
             fps: options.fps,
@@ -616,19 +833,34 @@ async function main(): Promise<void> {
             successResult.videoPath = videoPath;
           }
           
+          if (options.firstFrame) {
+            successResult.firstFrame = options.firstFrame;
+          }
+          if (options.lastFrame) {
+            successResult.lastFrame = options.lastFrame;
+          }
+          
           console.log(JSON.stringify(successResult, null, 2));
         } else {
           console.error(`任务未完成，TaskId: ${taskId}`);
-          const pendingResult = {
+          const pendingResult: any = {
             success: true,
             pending: true,
             prompt: options.prompt,
+            mode: mode,
             ratio: options.ratio,
             duration: options.duration,
             fps: options.fps,
             taskId,
             message: '任务未完成，请稍后使用相同提示词查询结果'
           };
+          
+          if (options.firstFrame) {
+            pendingResult.firstFrame = options.firstFrame;
+          }
+          if (options.lastFrame) {
+            pendingResult.lastFrame = options.lastFrame;
+          }
           console.log(JSON.stringify(pendingResult, null, 2));
         }
       } catch (waitErr: any) {
@@ -637,10 +869,11 @@ async function main(): Promise<void> {
       }
     } else {
       // 只提交，不等待
-      const result = {
+      const result: Record<string, any> = {
         success: true,
         submitted: true,
         prompt: options.prompt,
+        mode: mode,
         ratio: options.ratio,
         duration: options.duration,
         fps: options.fps,
@@ -648,6 +881,13 @@ async function main(): Promise<void> {
         folder: taskFolderPath,
         message: '任务已提交，请稍后使用相同提示词查询结果'
       };
+      
+      if (options.firstFrame) {
+        result.firstFrame = options.firstFrame;
+      }
+      if (options.lastFrame) {
+        result.lastFrame = options.lastFrame;
+      }
       console.log(JSON.stringify(result, null, 2));
     }
 
