@@ -1,0 +1,15 @@
+# Gemini Image Generation Parameters
+# Generated at: 2026-03-04T14:40:04.000Z
+# Timestamp: 1772635204000
+
+## Request Parameters
+
+- **contents**: 一只可爱的金毛犬在草地上奔跑
+- **aspectRatio**: 4:3
+- **imageSize**: 1K
+- **thinkingLevel**: minimal
+
+## Output Files
+
+- Image: gemini-banana-1772635204000.jpg
+- Params: gemini-banana-1772635204000.txt

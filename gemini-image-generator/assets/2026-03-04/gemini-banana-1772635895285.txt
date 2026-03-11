@@ -1,0 +1,15 @@
+# Gemini Image Generation Parameters
+# Generated at: 2026-03-04T14:51:35.285Z
+# Timestamp: 1772635895285
+
+## Request Parameters
+
+- **contents**: 一只大熊猫在吃竹子
+- **aspectRatio**: 1:1
+- **imageSize**: 1K
+- **thinkingLevel**: minimal
+
+## Output Files
+
+- Image: gemini-banana-1772635895285.jpg
+- Params: gemini-banana-1772635895285.txt

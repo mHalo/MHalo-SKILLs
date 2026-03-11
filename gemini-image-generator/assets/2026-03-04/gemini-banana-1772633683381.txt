@@ -1,0 +1,15 @@
+# Gemini Image Generation Parameters
+# Generated at: 2026-03-04T14:14:43.381Z
+# Timestamp: 1772633683381
+
+## Request Parameters
+
+- **contents**: 一只穿着宇航服的猫在月球上漫步
+- **aspectRatio**: 16:9
+- **imageSize**: 2K
+- **thinkingLevel**: high
+
+## Output Files
+
+- Image: gemini-banana-1772633683381.jpg
+- Params: gemini-banana-1772633683381.txt
