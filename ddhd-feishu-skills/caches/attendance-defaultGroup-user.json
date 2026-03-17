@@ -9,6 +9,7 @@
       ],
       "userInfo": {
         "user_id": "2a3f36c4",
+        "mobile": "+8613676979975",
         "name": "张凯帆",
         "department_names": [
           "0"
@@ -17,6 +18,11 @@
           "avatar_72": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m3_c3bd1921-81d3-4815-92f5-a668e6602d5g~?image_size=72x72&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_240": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m3_c3bd1921-81d3-4815-92f5-a668e6602d5g~?image_size=240x240&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_640": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m3_c3bd1921-81d3-4815-92f5-a668e6602d5g~?image_size=640x640&cut_type=&quality=&format=png&sticker_format=.webp"
+        },
+        "status": {
+          "is_activated": true,
+          "is_frozen": false,
+          "is_resigned": false
         }
       }
     },
@@ -27,6 +33,7 @@
       ],
       "userInfo": {
         "user_id": "5314294e",
+        "mobile": "+8613240461122",
         "name": "胡东方",
         "department_names": [
           "0"
@@ -35,6 +42,11 @@
           "avatar_72": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00g3_6550e326-1314-4837-80f5-fe4377d7ff1g~?image_size=72x72&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_240": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00g3_6550e326-1314-4837-80f5-fe4377d7ff1g~?image_size=240x240&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_640": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00g3_6550e326-1314-4837-80f5-fe4377d7ff1g~?image_size=640x640&cut_type=&quality=&format=png&sticker_format=.webp"
+        },
+        "status": {
+          "is_activated": true,
+          "is_frozen": false,
+          "is_resigned": false
         }
       }
     },
@@ -45,6 +57,7 @@
       ],
       "userInfo": {
         "user_id": "gb26gad7",
+        "mobile": "+8615981823831",
         "name": "樊营丹",
         "department_names": [
           "0"
@@ -53,6 +66,11 @@
           "avatar_72": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00gj_6fc018e0-d1e7-4e3e-91e5-bb8a1469397g~?image_size=72x72&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_240": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00gj_6fc018e0-d1e7-4e3e-91e5-bb8a1469397g~?image_size=240x240&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_640": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00gj_6fc018e0-d1e7-4e3e-91e5-bb8a1469397g~?image_size=640x640&cut_type=&quality=&format=png&sticker_format=.webp"
+        },
+        "status": {
+          "is_activated": true,
+          "is_frozen": false,
+          "is_resigned": false
         }
       }
     },
@@ -63,6 +81,7 @@
       ],
       "userInfo": {
         "user_id": "55g11c94",
+        "mobile": "+8617337148048",
         "name": "周志远",
         "department_names": [
           "0"
@@ -71,24 +90,11 @@
           "avatar_72": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00lo_53d2a520-2c29-4e12-a68e-a5897540c1bg~?image_size=72x72&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_240": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00lo_53d2a520-2c29-4e12-a68e-a5897540c1bg~?image_size=240x240&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_640": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00lo_53d2a520-2c29-4e12-a68e-a5897540c1bg~?image_size=640x640&cut_type=&quality=&format=png&sticker_format=.webp"
-        }
-      }
-    },
-    {
-      "user_id": "ac65bfee",
-      "department_ids": [
-        "od-3c5dd7e09bac0c1758fcf9511bd1a771"
-      ],
-      "userInfo": {
-        "user_id": "ac65bfee",
-        "name": "郭梦",
-        "department_names": [
-          "0"
-        ],
-        "avatar": {
-          "avatar_72": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m2_d01855c9-5784-4a44-81d4-38c058edaafg~?image_size=72x72&cut_type=&quality=&format=png&sticker_format=.webp",
-          "avatar_240": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m2_d01855c9-5784-4a44-81d4-38c058edaafg~?image_size=240x240&cut_type=&quality=&format=png&sticker_format=.webp",
-          "avatar_640": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m2_d01855c9-5784-4a44-81d4-38c058edaafg~?image_size=640x640&cut_type=&quality=&format=png&sticker_format=.webp"
+        },
+        "status": {
+          "is_activated": true,
+          "is_frozen": false,
+          "is_resigned": false
         }
       }
     },
@@ -99,6 +105,7 @@
       ],
       "userInfo": {
         "user_id": "e9fa18b7",
+        "mobile": "+8615139268905",
         "name": "陈可心",
         "department_names": [
           "0"
@@ -107,6 +114,11 @@
           "avatar_72": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00mt_c5003922-3e27-4b10-9553-9cac5c8d428g~?image_size=72x72&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_240": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00mt_c5003922-3e27-4b10-9553-9cac5c8d428g~?image_size=240x240&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_640": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00mt_c5003922-3e27-4b10-9553-9cac5c8d428g~?image_size=640x640&cut_type=&quality=&format=png&sticker_format=.webp"
+        },
+        "status": {
+          "is_activated": true,
+          "is_frozen": false,
+          "is_resigned": false
         }
       }
     },
@@ -117,6 +129,7 @@
       ],
       "userInfo": {
         "user_id": "a2fcff67",
+        "mobile": "+8619838049792",
         "name": "张静静",
         "department_names": [
           "0"
@@ -125,6 +138,11 @@
           "avatar_72": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00rt_9ef48dd7-bc62-49db-afd5-5b79fd6953fg~?image_size=72x72&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_240": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00rt_9ef48dd7-bc62-49db-afd5-5b79fd6953fg~?image_size=240x240&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_640": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00rt_9ef48dd7-bc62-49db-afd5-5b79fd6953fg~?image_size=640x640&cut_type=&quality=&format=png&sticker_format=.webp"
+        },
+        "status": {
+          "is_activated": true,
+          "is_frozen": false,
+          "is_resigned": false
         }
       }
     },
@@ -135,6 +153,7 @@
       ],
       "userInfo": {
         "user_id": "2bg8af6f",
+        "mobile": "+8618339936754",
         "name": "冯佳祺",
         "department_names": [
           "0"
@@ -143,10 +162,15 @@
           "avatar_72": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00tk_8ba3dc58-f53d-43fa-bb8a-0923a198477g~?image_size=72x72&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_240": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00tk_8ba3dc58-f53d-43fa-bb8a-0923a198477g~?image_size=240x240&cut_type=&quality=&format=png&sticker_format=.webp",
           "avatar_640": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00tk_8ba3dc58-f53d-43fa-bb8a-0923a198477g~?image_size=640x640&cut_type=&quality=&format=png&sticker_format=.webp"
+        },
+        "status": {
+          "is_activated": true,
+          "is_frozen": false,
+          "is_resigned": false
         }
       }
     }
   ],
-  "total_count": 8,
-  "_cached_at": "2026-03-03T09:32:58.679Z"
+  "total_count": 7,
+  "_cached_at": "2026-03-17T06:07:10.714Z"
 }

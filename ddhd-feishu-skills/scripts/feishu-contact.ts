@@ -18,7 +18,6 @@
  */
 
 import { client } from './feishu-client';
-import * as lark from '@larksuiteoapi/node-sdk';
 
 /**
  * 用户信息（简化版）
@@ -58,7 +57,7 @@ export interface UserInfo {
  * 根据用户的 open_id 或 user_id 获取详细信息
  * 
  * @param userId - 用户 ID（open_id 或 user_id）
- * @param userIdType - 用户 ID 类型，默认为 'user_id'，可选：'open_id' | 'union_id' | 'user_id' | 'employee_id'
+ * @param userIdType - 用户 ID 类型，默认为 'user_id'，可选：'open_id' | 'union_id' | 'user_id'
  * @returns 用户详细信息，如果用户不存在返回 null
  * @throws 调用失败时抛出错误
  * 
@@ -77,7 +76,7 @@ export interface UserInfo {
  */
 export async function getUserInfo(
   userId: string,
-  userIdType: 'open_id' | 'union_id' | 'user_id' | 'employee_id' = 'user_id'
+  userIdType: 'open_id' | 'union_id' | 'user_id' = 'user_id'
 ): Promise<UserInfo | null> {
   try {
     const res = await client.contact.v3.user.get({
@@ -188,7 +187,7 @@ export async function batchGetUserInfo(
  */
 export async function batchGetUserInfoWithPaging(
   userIds: string[],
-  userIdType: 'open_id' | 'union_id' | 'user_id' | 'employee_id' = 'user_id'
+  userIdType: 'open_id' | 'union_id' | 'user_id' = 'user_id'
 ): Promise<UserInfo[]> {
   if (!Array.isArray(userIds) || userIds.length === 0) {
     return [];
@@ -215,14 +214,14 @@ export async function batchGetUserInfoWithPaging(
  * @param user - 飞书 SDK 返回的用户对象
  * @returns 格式化后的用户信息
  */
-function formatUserInfo(user: lark.contact.User): UserInfo {
+function formatUserInfo(user: any): UserInfo {
   return {
     user_id: user.user_id || '',
     email: user.email || undefined,
     mobile: user.mobile || undefined,
     name: user.name || '',
     en_name: user.en_name || undefined,
-    department_names: user.department_ids || undefined, // 注意：这里返回的是部门ID列表，如需部门名称需要额外查询
+    department_names: user.department_ids || undefined,
     job_title: user.job_title || undefined,
     avatar: user.avatar ? {
       avatar_72: user.avatar.avatar_72,
@@ -236,27 +235,3 @@ function formatUserInfo(user: lark.contact.User): UserInfo {
     } : undefined,
   };
 }
-
-// ==================== 本地测试代码 ====================
-// 取消下面的注释可以进行本地测试（需要先在 .env 中配置好凭证）
-
-// async function test() {
-//   try {
-//     // 测试获取单个用户
-//     console.log('=== 测试获取单个用户 ===');
-//     const singleUser = await getUserInfo('ou_xxxxxxxxxxxxxxxx');
-//     console.log('单个用户:', JSON.stringify(singleUser, null, 2));
-// 
-//     // 测试批量获取用户
-//     console.log('\n=== 测试批量获取用户 ===');
-//     const batchUsers = await batchGetUserInfo([
-//       'ou_xxxxxxxxxxxxxxxx1',
-//       'ou_xxxxxxxxxxxxxxxx2',
-//     ]);
-//     console.log('批量用户:', JSON.stringify(batchUsers, null, 2));
-//   } catch (error) {
-//     console.error('测试失败:', error);
-//   }
-// }
-// 
-// test();

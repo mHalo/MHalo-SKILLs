@@ -108,6 +108,7 @@
       "scope_group_list": {
         "member_ids": [
           "459baebc",
+          "ac65bfee",
           "cb68a24g"
         ],
         "operation_type": 1,
@@ -158,5 +159,5 @@
     "not_during_shift": false
   },
   "isDefault": true,
-  "_cached_at": "2026-03-03T09:41:25.882Z"
+  "_cached_at": "2026-03-17T06:07:10.714Z"
 }
