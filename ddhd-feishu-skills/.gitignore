@@ -1,6 +1,28 @@
+# 环境变量
 .env
+
+# 依赖
 node_modules/
+
+# 日志
 *.log
+
+# 系统文件
 .DS_Store
-downloads/
+Thumbs.db
+
+# 运行时生成
 caches/*.json
+caches/
+downloads/
+
+# IDE
+.vscode/
+.idea/
+
+# 测试输出
+tests/output/
+coverage/
+
+# 临时验证脚本
+temp/

@@ -8,15 +8,20 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@lib/*": ["lib/*"],
+      "@scripts/*": ["scripts/*"]
+    }
   },
   "include": [
+    "lib/**/*",
     "scripts/**/*",
-    "cli/**/*"
+    "tests/**/*"
   ],
   "exclude": [
     "node_modules",
-    "tests",
-    "examples"
+    "caches"
   ]
 }

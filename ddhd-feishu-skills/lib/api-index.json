@@ -1,0 +1,130 @@
+{
+  "$schema": "./api-schema.json",
+  "version": "1.0.0",
+  "description": "飞书开放平台-服务端 API 能力索引 - 用于自进化 SKILL 自动创建基础能力",
+  "baseUrl": "https://open.feishu.cn/document",
+  "categories": {
+    "contact": {
+      "name": "通讯录",
+      "description": "用户、部门信息管理",
+      "apis": {
+        "user.get": {
+          "name": "获取用户信息",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/contact-v3/user/get",
+          "method": "GET",
+          "path": "/open-apis/contact/v3/users/:user_id",
+          "permissions": ["contact:user.base:readonly"],
+          "sdkMethod": "client.contact.v3.user.get",
+          "implemented": true,
+          "libFile": "lib/contact.ts"
+        },
+        "user.batch": {
+          "name": "批量获取用户信息",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/contact-v3/user/batch",
+          "method": "GET",
+          "path": "/open-apis/contact/v3/users/batch",
+          "permissions": ["contact:user.base:readonly"],
+          "sdkMethod": "client.contact.v3.user.batch",
+          "implemented": true,
+          "libFile": "lib/contact.ts"
+        }
+      }
+    },
+    "attendance": {
+      "name": "考勤",
+      "description": "考勤组、班次、打卡记录",
+      "apis": {
+        "group.list": {
+          "name": "获取考勤组列表",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/attendance-v1/group/list",
+          "method": "GET",
+          "path": "/open-apis/attendance/v1/groups",
+          "permissions": ["attendance:group:readonly"],
+          "sdkMethod": "client.attendance.v1.group.list",
+          "implemented": true,
+          "libFile": "lib/attendance.ts"
+        },
+        "group.get": {
+          "name": "获取考勤组详情",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/attendance-v1/group/get",
+          "method": "GET",
+          "path": "/open-apis/attendance/v1/groups/:group_id",
+          "permissions": ["attendance:group:readonly"],
+          "sdkMethod": "client.attendance.v1.group.get",
+          "implemented": true,
+          "libFile": "lib/attendance.ts"
+        },
+        "group.listUser": {
+          "name": "获取考勤组成员",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/attendance-v1/group-user/list",
+          "method": "GET",
+          "path": "/open-apis/attendance/v1/groups/:group_id/users",
+          "permissions": ["attendance:group:readonly"],
+          "sdkMethod": "client.attendance.v1.group.listUser",
+          "implemented": true,
+          "libFile": "lib/attendance.ts"
+        },
+        "shift.get": {
+          "name": "获取班次详情",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/attendance-v1/shift/get",
+          "method": "GET",
+          "path": "/open-apis/attendance/v1/shifts/:shift_id",
+          "permissions": ["attendance:shift:readonly"],
+          "sdkMethod": "client.attendance.v1.shift.get",
+          "implemented": true,
+          "libFile": "lib/attendance.ts"
+        },
+        "userStatsData.query": {
+          "name": "查询考勤统计数据",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/attendance-v1/user-stats-data/query",
+          "method": "POST",
+          "path": "/open-apis/attendance/v1/user_stats_datas/query",
+          "permissions": ["attendance:attendance:readonly"],
+          "sdkMethod": "client.attendance.v1.userStatsData.query",
+          "implemented": true,
+          "libFile": "lib/attendance.ts"
+        }
+      }
+    },
+    "drive": {
+      "name": "云空间",
+      "description": "文件、素材管理",
+      "apis": {
+        "media.uploadAll": {
+          "name": "上传素材",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/drive-v1/media/upload_all",
+          "method": "POST",
+          "path": "/open-apis/drive/v1/medias/upload_all",
+          "permissions": ["drive:media:upload"],
+          "sdkMethod": "client.drive.v1.media.uploadAll",
+          "implemented": true,
+          "libFile": "lib/drive.ts"
+        },
+        "media.download": {
+          "name": "下载素材",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/drive-v1/media/download",
+          "method": "GET",
+          "path": "/open-apis/drive/v1/medias/:file_token/download",
+          "permissions": ["drive:media:download"],
+          "sdkMethod": "client.drive.v1.media.download",
+          "implemented": true,
+          "libFile": "lib/drive.ts"
+        },
+        "media.batchGetTmpDownloadUrl": {
+          "name": "批量获取素材临时下载链接",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/drive-v1/media/batch_get_tmp_download_url",
+          "method": "GET",
+          "path": "/open-apis/drive/v1/medias/batch_get_tmp_download_url",
+          "permissions": ["drive:media:readonly"],
+          "sdkMethod": "client.drive.v1.media.batchGetTmpDownloadUrl",
+          "implemented": true,
+          "libFile": "lib/drive.ts"
+        }
+      }
+    }
+  },
+  "templates": {
+    "newCapability": "./TEMPLATE.ts",
+    "newScenario": "./scripts/_template.ts"
+  }
+}

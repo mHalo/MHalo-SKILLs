@@ -1,38 +1,26 @@
 {
   "name": "@ddhd/feishu-skills",
-  "version": "1.0.0",
-  "description": "飞书开放平台 SDK 封装技能，提供通讯录用户管理、考勤管理和云空间素材管理功能",
-  "main": "scripts/index.ts",
-  "types": "scripts/index.ts",
+  "version": "2.0.0",
+  "description": "飞书开放平台自进化 SKILL，提供通讯录、考勤、云空间等基础能力，支持业务场景快速组合",
+  "main": "lib/index.ts",
+  "types": "lib/index.ts",
   "bin": {
-    "today-attendance": "cli/today-attendance.ts",
-    "media-manager": "cli/media-manager.ts",
-    "contact-query": "cli/contact-query.ts"
+    "feishu-today-attendance": "scripts/today-attendance.ts",
+    "feishu-media-manager": "scripts/media-manager.ts",
+    "feishu-contact-query": "scripts/contact-query.ts"
   },
   "exports": {
     ".": {
-      "import": "./scripts/index.ts",
-      "require": "./scripts/index.ts"
+      "import": "./lib/index.ts",
+      "require": "./lib/index.ts"
     },
-    "./client": {
-      "import": "./scripts/feishu-client.ts",
-      "require": "./scripts/feishu-client.ts"
+    "./lib/*": {
+      "import": "./lib/*.ts",
+      "require": "./lib/*.ts"
     },
-    "./contact": {
-      "import": "./scripts/feishu-contact.ts",
-      "require": "./scripts/feishu-contact.ts"
-    },
-    "./attendance": {
-      "import": "./scripts/feishu-attendance.ts",
-      "require": "./scripts/feishu-attendance.ts"
-    },
-    "./attendance-today": {
-      "import": "./scripts/feishu-attendance-today.ts",
-      "require": "./scripts/feishu-attendance-today.ts"
-    },
-    "./media": {
-      "import": "./scripts/feishu-media.ts",
-      "require": "./scripts/feishu-media.ts"
+    "./scripts/*": {
+      "import": "./scripts/*.ts",
+      "require": "./scripts/*.ts"
     }
   },
   "keywords": [
@@ -43,7 +31,8 @@
     "attendance",
     "contact",
     "media",
-    "飞书"
+    "飞书",
+    "自进化"
   ],
   "author": "DDHD",
   "license": "ISC",

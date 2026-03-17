@@ -1,15 +1,20 @@
 #!/usr/bin/env ts-node
 /**
- * 通讯录查询 CLI
+ * 通讯录查询
  * 
- * 业务场景：查询员工信息，支持单人和批量查询
+ * 场景描述: 查询员工信息，支持单人和批量查询
  * 
- * 用法：
- *   npx contact-query -i <user_id>
- *   npx contact-query --ids <id1>,<id2>,<id3>
+ * 使用的基础能力:
+ * - lib/contact.ts - getUserInfo, batchGetUserInfo
+ * 
+ * 使用方法:
+ * ```bash
+ * npx ts-node scripts/contact-query.ts -i <user_id>
+ * npx ts-node scripts/contact-query.ts --ids <id1>,<id2>,<id3>
+ * ```
  */
 
-import { getUserInfo, batchGetUserInfo } from '../scripts/feishu-contact';
+import { getUserInfo, batchGetUserInfo } from '../lib/contact';
 
 function parseArgs(args: string[]): Record<string, string> {
   const result: Record<string, string> = {};
@@ -38,7 +43,7 @@ function printUsage() {
   console.log(`
 通讯录查询
 
-用法: npx contact-query [选项]
+用法: npx ts-node scripts/contact-query.ts [选项]
 
 选项:
   -i, --id            查询单个用户 ID
@@ -48,10 +53,10 @@ function printUsage() {
   -h, --help          显示帮助信息
 
 示例:
-  npx contact-query -i user_xxx                    # 查询单个用户
-  npx contact-query -i ou_xxx -t open_id           # 使用 open_id 查询
-  npx contact-query --ids user_xxx,user_yyy        # 批量查询
-  npx contact-query -i user_xxx -o ./user.json     # 保存到文件
+  npx ts-node scripts/contact-query.ts -i user_xxx                    # 查询单个用户
+  npx ts-node scripts/contact-query.ts -i ou_xxx -t open_id           # 使用 open_id 查询
+  npx ts-node scripts/contact-query.ts --ids user_xxx,user_yyy        # 批量查询
+  npx ts-node scripts/contact-query.ts -i user_xxx -o ./user.json     # 保存到文件
 `);
 }
 
@@ -73,7 +78,6 @@ async function main() {
     let result: any;
 
     if (id) {
-      // 单个查询
       const user = await getUserInfo(id, idType);
       if (user) {
         result = user;
@@ -84,7 +88,6 @@ async function main() {
         process.exit(1);
       }
     } else if (idsStr) {
-      // 批量查询
       const ids = idsStr.split(',').map((id: string) => id.trim());
       const users = await batchGetUserInfo(ids, idType);
       result = users;

@@ -107,9 +107,9 @@
       "rule_scope_type": 2,
       "scope_group_list": {
         "member_ids": [
-          "459baebc",
           "ac65bfee",
-          "cb68a24g"
+          "cb68a24g",
+          "459baebc"
         ],
         "operation_type": 1,
         "right": [],
@@ -159,5 +159,5 @@
     "not_during_shift": false
   },
   "isDefault": true,
-  "_cached_at": "2026-03-17T06:07:10.714Z"
+  "_cached_at": "2026-03-17T08:32:42.402Z"
 }
