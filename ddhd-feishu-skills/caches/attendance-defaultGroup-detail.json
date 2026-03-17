@@ -1,0 +1,162 @@
+{
+  "allow_apply_punch": false,
+  "allow_out_punch": true,
+  "allow_pc_punch": false,
+  "allow_remedy": true,
+  "allow_remedy_type_early": false,
+  "allow_remedy_type_lack": true,
+  "allow_remedy_type_late": false,
+  "allow_remedy_type_normal": false,
+  "bind_default_dept_ids": [],
+  "bind_default_user_ids": [],
+  "bind_dept_ids": [],
+  "bind_user_ids": [],
+  "calendar_id": 1,
+  "clockIn_need_photo": false,
+  "effect_time": "1752659185",
+  "except_dept_ids": [],
+  "except_user_ids": [],
+  "face_punch": false,
+  "go_out_need_punch": 0,
+  "go_out_need_punch_cfg": {
+    "early_minutes_as_early": 0,
+    "early_minutes_as_lack": 30,
+    "late_minutes_as_lack": 30,
+    "late_minutes_as_late": 0,
+    "not_during_shift": false
+  },
+  "gps_range": 300,
+  "group_id": "7414010894549975043",
+  "group_leader_ids": [
+    "459baebc"
+  ],
+  "group_name": "早起早睡好身体",
+  "group_type": 0,
+  "hide_clock_in_rule": false,
+  "hide_staff_punch_time": false,
+  "leave_need_punch": true,
+  "leave_need_punch_cfg": {
+    "early_minutes_as_early": 0,
+    "early_minutes_as_lack": 30,
+    "late_minutes_as_lack": 30,
+    "late_minutes_as_late": 0,
+    "not_during_shift": false
+  },
+  "locations": [
+    {
+      "address": "河南省郑州市金水区金水东路80号绿地新都会附近",
+      "gps_range": 100,
+      "latitude": 34.770659,
+      "location_id": "7414010894622752771",
+      "location_name": "绿地新都会6座",
+      "location_type": 1,
+      "longitude": 113.768264,
+      "map_type": 1
+    },
+    {
+      "bssid": "3E:81:3E:2C:CE:54",
+      "location_id": "7527613882546388996",
+      "location_name": "tplink.ddhd.5G",
+      "location_type": 2,
+      "ssid": "3E:81:3E:2C:CE:54"
+    },
+    {
+      "bssid": "96:39:9E:FA:AC:07",
+      "location_id": "7527613882546405380",
+      "location_name": "tplink.ddhd",
+      "location_type": 2,
+      "ssid": "96:39:9E:FA:AC:07"
+    },
+    {
+      "bssid": "42:7A:64:06:D6:65",
+      "location_id": "7527613882546421764",
+      "location_name": "wifi.ddhd_Wi-Fi5",
+      "location_type": 2,
+      "ssid": "42:7A:64:06:D6:65"
+    },
+    {
+      "bssid": "BA:44:37:BA:A6:64",
+      "location_id": "7527613882546438148",
+      "location_name": "wifi.ddhd",
+      "location_type": 2,
+      "ssid": "BA:44:37:BA:A6:64"
+    },
+    {
+      "ip": "39.165.248.69",
+      "location_id": "7527613882534641683",
+      "location_name": "公司网络",
+      "location_type": 8
+    }
+  ],
+  "machines": [],
+  "member_status_change": {
+    "offboarding_off_no_need_punch": false,
+    "offboarding_on_no_need_punch": false,
+    "onboarding_off_no_need_punch": false,
+    "onboarding_on_no_need_punch": false
+  },
+  "need_punch_members": [
+    {
+      "rule_scope_type": 1
+    }
+  ],
+  "need_punch_special_days": [],
+  "new_calendar_id": "1",
+  "no_need_punch_members": [
+    {
+      "rule_scope_type": 2,
+      "scope_group_list": {
+        "member_ids": [
+          "459baebc",
+          "cb68a24g"
+        ],
+        "operation_type": 1,
+        "right": [],
+        "scope_value_type": 2
+      }
+    }
+  ],
+  "no_need_punch_special_days": [],
+  "org_change_auto_adjust": true,
+  "out_punch_allowed_adjust_addr": false,
+  "out_punch_allowed_hide_addr": false,
+  "out_punch_need_photo": false,
+  "out_punch_need_remark": true,
+  "overtime_clock_cfg": {
+    "allow_punch_approval": false,
+    "need_clock_over_time_start_and_end": true
+  },
+  "punch_day_shift_ids": [
+    "8",
+    "8",
+    "8",
+    "8",
+    "8",
+    "0",
+    "0"
+  ],
+  "punch_type": 11,
+  "remedy_date_limit": true,
+  "remedy_date_num": 3,
+  "remedy_limit": true,
+  "remedy_limit_count": 2,
+  "remedy_period_type": 1,
+  "rest_clockIn_need_approval": false,
+  "save_auto_changes": false,
+  "show_cumulative_time": false,
+  "show_over_time": false,
+  "sub_group_leader_ids": [
+    "459baebc"
+  ],
+  "time_zone": "Asia/Shanghai",
+  "travel_need_punch": 0,
+  "travel_need_punch_cfg": {
+    "early_minutes_as_early": 0,
+    "early_minutes_as_lack": 30,
+    "late_minutes_as_lack": 30,
+    "late_minutes_as_late": 0,
+    "not_during_shift": false
+  },
+  "isDefault": true,
+  "_cached_at": "2026-03-03T09:41:25.882Z"
+}

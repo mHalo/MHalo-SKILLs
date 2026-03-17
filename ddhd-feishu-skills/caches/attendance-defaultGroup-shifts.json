@@ -1,0 +1,31 @@
+{
+  "group_id": "7414010894549975043",
+  "group_name": "早起早睡好身体",
+  "shifts": [
+    {
+      "shift_id": "8",
+      "shift_name": "默认班次",
+      "punch_times": 1,
+      "is_flexible": false,
+      "flexible_minutes": 0,
+      "no_need_off": false,
+      "punch_time_rule": [
+        {
+          "early_minutes_as_early": 0,
+          "early_minutes_as_lack": 30,
+          "late_minutes_as_lack": 30,
+          "late_minutes_as_late": 0,
+          "no_need_off": true,
+          "no_need_on": true,
+          "off_delay_minutes": 480,
+          "off_time": "18:00",
+          "on_advance_minutes": 60,
+          "on_time": "09:00"
+        }
+      ],
+      "day_type": 1
+    }
+  ],
+  "total_count": 1,
+  "_cached_at": "2026-03-03T09:41:26.059Z"
+}
