@@ -1,6 +1,6 @@
 {
   "$schema": "./api-schema.json",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "飞书开放平台-服务端 API 能力索引 - 用于自进化 SKILL 自动创建基础能力",
   "baseUrl": "https://open.feishu.cn/document",
   "categories": {
@@ -119,6 +119,182 @@
           "sdkMethod": "client.drive.v1.media.batchGetTmpDownloadUrl",
           "implemented": true,
           "libFile": "lib/drive.ts"
+        }
+      }
+    },
+    "bitable": {
+      "name": "多维表格",
+      "description": "多维表格（Bitable）应用、表格、字段、记录管理",
+      "apis": {
+        "app.create": {
+          "name": "创建多维表格应用",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app/create",
+          "method": "POST",
+          "path": "/open-apis/bitable/v1/apps",
+          "permissions": ["bitable:app"],
+          "sdkMethod": "client.bitable.v1.app.create",
+          "implemented": true,
+          "libFile": "lib/bitable.ts"
+        },
+        "appTable.create": {
+          "name": "创建表格",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table/create",
+          "method": "POST",
+          "path": "/open-apis/bitable/v1/apps/:app_token/tables",
+          "permissions": ["bitable:app"],
+          "sdkMethod": "client.bitable.v1.appTable.create",
+          "implemented": true,
+          "libFile": "lib/bitable.ts"
+        },
+        "appTable.list": {
+          "name": "获取表格列表",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table/list",
+          "method": "GET",
+          "path": "/open-apis/bitable/v1/apps/:app_token/tables",
+          "permissions": ["bitable:app"],
+          "sdkMethod": "client.bitable.v1.appTable.list",
+          "implemented": true,
+          "libFile": "lib/bitable.ts"
+        },
+        "appTableField.list": {
+          "name": "获取字段列表",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-field/list",
+          "method": "GET",
+          "path": "/open-apis/bitable/v1/apps/:app_token/tables/:table_id/fields",
+          "permissions": ["bitable:app"],
+          "sdkMethod": "client.bitable.v1.appTableField.list",
+          "implemented": true,
+          "libFile": "lib/bitable.ts"
+        },
+        "appTableField.create": {
+          "name": "创建字段",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-field/create",
+          "method": "POST",
+          "path": "/open-apis/bitable/v1/apps/:app_token/tables/:table_id/fields",
+          "permissions": ["bitable:app"],
+          "sdkMethod": "client.bitable.v1.appTableField.create",
+          "implemented": true,
+          "libFile": "lib/bitable.ts"
+        },
+        "appTableRecord.search": {
+          "name": "查询记录",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-record/search",
+          "method": "POST",
+          "path": "/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/search",
+          "permissions": ["bitable:record"],
+          "sdkMethod": "client.bitable.v1.appTableRecord.search",
+          "implemented": true,
+          "libFile": "lib/bitable.ts"
+        },
+        "appTableRecord.create": {
+          "name": "创建记录",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-record/create",
+          "method": "POST",
+          "path": "/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records",
+          "permissions": ["bitable:record"],
+          "sdkMethod": "client.bitable.v1.appTableRecord.create",
+          "implemented": true,
+          "libFile": "lib/bitable.ts"
+        },
+        "appTableRecord.get": {
+          "name": "获取记录",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-record/get",
+          "method": "GET",
+          "path": "/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/:record_id",
+          "permissions": ["bitable:record"],
+          "sdkMethod": "client.bitable.v1.appTableRecord.get",
+          "implemented": true,
+          "libFile": "lib/reimbursement-manager.ts"
+        },
+        "appTableRecord.update": {
+          "name": "更新记录",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-record/update",
+          "method": "PUT",
+          "path": "/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/:record_id",
+          "permissions": ["bitable:record"],
+          "sdkMethod": "client.bitable.v1.appTableRecord.update",
+          "implemented": true,
+          "libFile": "lib/reimbursement-manager.ts"
+        },
+        "appTableRecord.delete": {
+          "name": "删除记录",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-record/delete",
+          "method": "DELETE",
+          "path": "/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/:record_id",
+          "permissions": ["bitable:record"],
+          "sdkMethod": "client.bitable.v1.appTableRecord.delete",
+          "implemented": true,
+          "libFile": "lib/bitable.ts"
+        },
+        "appRole.create": {
+          "name": "创建自定义角色",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-role/create",
+          "method": "POST",
+          "path": "/open-apis/bitable/v1/apps/:app_token/roles",
+          "permissions": ["bitable:app"],
+          "sdkMethod": "client.bitable.v1.appRole.create",
+          "implemented": true,
+          "libFile": "lib/bitable-role.ts"
+        },
+        "appRoleMember.batchCreate": {
+          "name": "批量添加协作者",
+          "docUrl": "https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-role-member/batch_create",
+          "method": "POST",
+          "path": "/open-apis/bitable/v1/apps/:app_token/roles/:role_id/members/batch_create",
+          "permissions": ["bitable:app"],
+          "sdkMethod": "client.bitable.v1.appRoleMember.batchCreate",
+          "implemented": true,
+          "libFile": "lib/bitable-collaborator.ts"
+        }
+      }
+    },
+    "invoice": {
+      "name": "发票识别",
+      "description": "发票/图片信息提取（本地实现 + LLM 支持）",
+      "isLocalCapability": true,
+      "apis": {
+        "extract.pdf": {
+          "name": "提取 PDF 发票信息",
+          "description": "使用 pdfplumber 本地提取 PDF 文本并解析",
+          "implemented": true,
+          "libFile": "lib/invoice-extractor.ts"
+        },
+        "extract.llm": {
+          "name": "使用 LLM 提取发票信息",
+          "description": "调用大模型分析发票/图片，获取结构化数据",
+          "implemented": true,
+          "libFile": "lib/invoice-extractor.ts"
+        }
+      }
+    },
+    "reimbursement": {
+      "name": "报销管理",
+      "description": "报销表生命周期管理和报销记录操作（本地业务封装）",
+      "isLocalCapability": true,
+      "apis": {
+        "table.getOrCreate": {
+          "name": "获取或创建当月报销表",
+          "description": "自动管理报销表历史，创建新表并设置权限",
+          "implemented": true,
+          "libFile": "lib/reimbursement-manager.ts"
+        },
+        "record.add": {
+          "name": "添加报销记录",
+          "description": "自动生成序号，支持附件上传",
+          "implemented": true,
+          "libFile": "lib/reimbursement-manager.ts"
+        },
+        "record.update": {
+          "name": "修改报销记录",
+          "description": "支持字段更新，不允许删除",
+          "implemented": true,
+          "libFile": "lib/reimbursement-manager.ts"
+        },
+        "record.query": {
+          "name": "查询报销记录",
+          "description": "按用户查询，支持分页",
+          "implemented": true,
+          "libFile": "lib/reimbursement-manager.ts"
         }
       }
     }

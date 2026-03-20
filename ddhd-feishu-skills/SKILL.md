@@ -1,6 +1,11 @@
-# DDHD 飞书 SKILL - 自进化开发指南
+---
+name: ddhd-feishu-skills
+description: 飞书开放平台 SDK 封装技能，当需要获取飞书用户信息，查询考勤组、考勤统计、迟到记录，发票报销等场景时使用此SKILL。同时，这是一个自进化 SKILL，旨在通过组合飞书的基础接口能力快速构建业务场景，若当前已有能力不能满足业务场景时，可以参考SKILL.md中的自进化开发指南，完成相关能力的搭建与开发制作。
+---
 
-这是一个**自进化 SKILL**，旨在通过组合基础能力快速构建业务场景。
+
+
+# DDHD 飞书 SKILL - 自进化开发指南
 
 ## 核心概念
 
@@ -152,6 +157,50 @@ cat > scripts/user-search.ts  # 正式业务场景
 4. **导出能力**: 在 `lib/index.ts` 中导出
 5. **更新文档**: 更新 `docs/capabilities.md` 和 `lib/api-index.json`
 
+## 新增模块说明
+
+### 发票信息提取 (lib/invoice-extractor.ts)
+
+智能发票识别模块，支持从 PDF 发票和图片中提取结构化信息。
+
+**核心特性：**
+- 优先使用大模型（LLM）分析，获取更准确的结构化数据
+- 本地 PDF 提取作为备选方案（pdfplumber）
+- 智能费用分类（差旅、办公用品、业务招待等）
+
+**使用场景：**
+- 智能报销助手中的发票自动识别
+- 其他需要发票信息提取的业务场景
+
+### 报销表管理 (lib/reimbursement-manager.ts)
+
+报销业务核心模块，管理报销表生命周期和报销记录。
+
+**核心特性：**
+- 自动维护报销表历史记录（caches/reimbursement_bittable_history.json）
+- 当月报销表不存在时自动创建
+- 自动配置管理员和编辑者权限
+- 支持报销记录的新增、查询、修改（不允许删除）
+
+**使用场景：**
+- 智能报销助手的核心依赖
+- 员工自助报销业务流程
+
+### 智能报销助手 (scripts/reimbursement-assistant.ts)
+
+员工通过飞书 Agent 提交报销的完整解决方案。
+
+**Agent 交互流程：**
+```
+1. 用户发送报销信息 + 发票/图片
+2. Agent 调用 extract 提取发票信息（或使用 LLM）
+3. Agent 向用户展示提取的信息，要求确认
+4. 用户确认后，Agent 调用 add 添加报销记录
+5. Agent 回复报销结果和表格链接
+```
+
+**文件位置：** `scripts/reimbursement-assistant.ts`
+
 ## 目录规范
 
 | 目录 | 用途 | 规范 |
@@ -161,6 +210,7 @@ cat > scripts/user-search.ts  # 正式业务场景
 | `tests/` | 测试 | 与 scripts 一一对应 |
 | `docs/` | 文档 | capabilities.md, scenarios.md |
 | `caches/` | 缓存 | 运行时生成，不提交 git |
+| `references/` | 参考资料 | API 文档、示例代码等 |
 
 ## 关键原则
 

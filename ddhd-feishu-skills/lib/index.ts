@@ -62,3 +62,84 @@ export {
   type DownloadMediaResult,
   type MediaTmpDownloadUrl,
 } from './drive';
+
+// 多维表格能力
+export {
+  createBitableApp,
+  createAppTable,
+  listAppTables,
+  listTableFields,
+  createTableField,
+  listTableRecords,
+  deleteTableRecord,
+  createExpenseBitable,
+  addExpenseRecord,
+  type BitableAppInfo,
+  type BitableTableInfo,
+  type FieldConfig,
+  type FieldInfo,
+  type FieldType,
+  type RecordInfo,
+  type ExpenseBitableResult,
+} from './bitable';
+
+// 多维表格协作者管理
+export {
+  listCollaborators,
+  addCollaborator,
+  batchAddCollaborators,
+  removeCollaborator,
+  batchRemoveCollaborators,
+  addCollaboratorsToRole,
+  listAppRoles,
+  type CollaboratorMemberType,
+  type CollaboratorInfo,
+  type CollaboratorResult,
+} from './bitable-collaborator';
+
+// 多维表格自定义角色管理
+export {
+  createAppRole,
+  updateAppRole,
+  listAppRolesV2,
+  deleteAppRole,
+  createAdminRole,
+  createEditorRole,
+  getOrCreateRole,
+  type TablePerm,
+  type TableRoleConfig,
+  type RoleInfo,
+  type CreateRoleResult,
+  type DeleteRoleResult,
+} from './bitable-role';
+
+// 发票信息提取
+export {
+  extractInvoiceInfo,
+  parseLLMResult,
+  mergeReimbursementInfo,
+  validateReimbursementInfo,
+  formatReimbursementInfo,
+  type ExtractedInvoiceInfo,
+  type ReimbursementInfo,
+} from './invoice-extractor';
+
+// 报销表管理
+export {
+  loadReimbursementHistory,
+  saveReimbursementHistory,
+  getCurrentMonth,
+  findMonthBitable,
+  getOrCreateMonthBitable,
+  addReimbursementRecord,
+  queryUserReimbursementRecords,
+  getReimbursementRecord,
+  updateReimbursementRecord,
+  updatePermissionConfig,
+  getBitableStats,
+  type BittableHistoryItem,
+  type ReimbursementHistory,
+  type CurrentMonthBitable,
+  type ReimbursementRecord,
+  type ModifyResult,
+} from './reimbursement-manager';
