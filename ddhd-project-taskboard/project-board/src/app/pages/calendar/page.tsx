@@ -702,9 +702,9 @@ export default function CalendarPage() {
             <div className="space-y-2">
               <Label>所属项目</Label>
               <Select
-                value={newEvent.projectId}
+                value={newEvent.projectId || undefined}
                 onValueChange={(v) =>
-                  setNewEvent({ ...newEvent, projectId: v })
+                  setNewEvent({ ...newEvent, projectId: v || "" })
                 }
               >
                 <SelectTrigger>
@@ -724,7 +724,7 @@ export default function CalendarPage() {
               <Select
                 value={newEvent.eventType}
                 onValueChange={(v) =>
-                  setNewEvent({ ...newEvent, eventType: v })
+                  setNewEvent({ ...newEvent, eventType: v || "会议" })
                 }
               >
                 <SelectTrigger>

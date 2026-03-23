@@ -687,8 +687,8 @@ export default function ProjectDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="milestone">所属里程碑</Label>
               <Select 
-                value={newTaskMilestoneId} 
-                onValueChange={setNewTaskMilestoneId}
+                value={newTaskMilestoneId || undefined}
+                onValueChange={(v) => setNewTaskMilestoneId(v || "")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="选择里程碑">
@@ -715,7 +715,7 @@ export default function ProjectDetailPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="priority">优先级</Label>
-              <Select value={newTaskPriority} onValueChange={setNewTaskPriority}>
+              <Select value={newTaskPriority} onValueChange={(v) => setNewTaskPriority(v || "P1")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

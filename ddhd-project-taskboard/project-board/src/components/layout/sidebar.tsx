@@ -183,7 +183,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Select
                 value={newProject.type}
                 onValueChange={(v) =>
-                  setNewProject({ ...newProject, type: v })
+                  setNewProject({ ...newProject, type: v || "营销" })
                 }
               >
                 <SelectTrigger>
