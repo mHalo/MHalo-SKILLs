@@ -215,14 +215,21 @@ export default function DashboardPage() {
                         </span>
                       </div>
 
-                      {/* 项目名称 */}
-                      <h3 className="font-semibold text-brand-primary group-hover:text-brand-info transition-colors mb-1 line-clamp-1 text-sm">
+                      {/* 项目名称 - 字号加大 */}
+                      <h3 className="font-semibold text-brand-primary group-hover:text-brand-info transition-colors mb-3 line-clamp-1 text-base">
                         {project.name}
                       </h3>
                       
-                      <p className="text-xs text-brand-secondary mb-3">
-                        {project.client || "无客户"}
-                      </p>
+                      {/* 成员头像 - 移动到项目名称下方 */}
+                      <div className="flex -space-x-1.5 mb-3">
+                        {[1, 2, 3].map((_, i) => (
+                          <Avatar key={i} className="w-6 h-6 border-2 border-white">
+                            <AvatarFallback className="bg-brand-main text-brand-primary text-[10px]">
+                              {String.fromCharCode(65 + i)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
 
                       {/* 进度条 */}
                       <div className="mt-auto">
@@ -237,8 +244,14 @@ export default function DashboardPage() {
                           />
                         </div>
 
-                        {/* 底部统计和头像 */}
+                        {/* 底部：客户名称 + 统计信息（人物和里程碑位置互换） */}
                         <div className="flex items-center justify-between pt-3 border-t border-brand-border">
+                          {/* 客户名称 - 移到底部左侧 */}
+                          <p className="text-xs text-brand-secondary">
+                            {project.client || "无客户"}
+                          </p>
+                          
+                          {/* 统计信息 - 移动到右侧 */}
                           <div className="flex items-center gap-4 text-xs text-brand-secondary">
                             <span className="flex items-center gap-1">
                               <Calendar size={14} strokeWidth={1.5} />
@@ -248,17 +261,6 @@ export default function DashboardPage() {
                               <CheckCircle2 size={14} strokeWidth={1.5} />
                               {project.milestoneCount} 里程碑
                             </span>
-                          </div>
-                          
-                          {/* 成员头像 */}
-                          <div className="flex -space-x-1.5">
-                            {[1, 2, 3].map((_, i) => (
-                              <Avatar key={i} className="w-6 h-6 border-2 border-white">
-                                <AvatarFallback className="bg-brand-main text-brand-primary text-[10px]">
-                                  {String.fromCharCode(65 + i)}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
                           </div>
                         </div>
                       </div>
