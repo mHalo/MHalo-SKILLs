@@ -43,7 +43,7 @@ export default function PriorityPage() {
         );
         setTasks(tasksWithDetails);
       }
-    } catch (error) {
+    } catch {
       toast.error("获取任务数据失败");
     } finally {
       setLoading(false);

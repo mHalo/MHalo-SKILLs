@@ -22,7 +22,7 @@ interface CalendarEvent {
 export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate] = useState(new Date());
 
   useEffect(() => {
     fetchEvents();
@@ -36,7 +36,7 @@ export default function CalendarPage() {
       if (data.data) {
         setEvents(data.data);
       }
-    } catch (error) {
+    } catch {
       toast.error("获取日历事件失败");
     } finally {
       setLoading(false);

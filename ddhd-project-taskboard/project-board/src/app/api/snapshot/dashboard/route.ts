@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 // GET /api/snapshot/dashboard - 获取仪表盘数据（所有项目概览）
 export async function GET(request: NextRequest) {
@@ -7,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
 
-    const where: any = {};
+    const where: Prisma.ProjectWhereInput = {};
     if (status) where.status = status;
 
     const projects = await prisma.project.findMany({

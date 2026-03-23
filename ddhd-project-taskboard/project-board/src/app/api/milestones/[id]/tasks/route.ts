@@ -1,5 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
+
+// 定义任务树类型
+interface TaskTreeItem {
+  id: string;
+  title: string;
+  description: string | null;
+  assigneeRole: string | null;
+  assigneeName: string | null;
+  deliverableType: string | null;
+  status: string;
+  priority: string;
+  plannedDate: Date | null;
+  actualDate: Date | null;
+  milestoneId: string;
+  parentTaskId: string | null;
+  nextTaskId?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  assignees: Prisma.TaskAssigneeGetPayload<{
+    include: {
+      user: {
+        select: {
+          id: true;
+          userId: true;
+          userName: true;
+          avatar: true;
+          role: true;
+        };
+      };
+    };
+  }>[];
+  _count: {
+    subTasks: number;
+  };
+  subTasks: TaskTreeItem[];
+}
 
 // GET /api/milestones/[id]/tasks - 获取里程碑的任务列表（树形结构）
 export async function GET(
@@ -34,8 +71,8 @@ export async function GET(
     });
 
     // 构建任务树
-    const taskMap = new Map();
-    const rootTasks: any[] = [];
+    const taskMap = new Map<string, TaskTreeItem>();
+    const rootTasks: TaskTreeItem[] = [];
 
     // 先创建所有任务的映射
     allTasks.forEach((task) => {
@@ -44,7 +81,7 @@ export async function GET(
 
     // 构建父子关系
     allTasks.forEach((task) => {
-      const taskWithChildren = taskMap.get(task.id);
+      const taskWithChildren = taskMap.get(task.id)!;
       if (task.parentTaskId) {
         const parent = taskMap.get(task.parentTaskId);
         if (parent) {

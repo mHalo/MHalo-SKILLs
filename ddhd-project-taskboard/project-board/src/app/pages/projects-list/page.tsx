@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FolderOpen, Calendar, CheckCircle2, Clock, ArrowRight, AlertCircle, MoreHorizontal, Search, Filter } from "lucide-react";
+import { FolderOpen, Calendar, Clock, ArrowRight, AlertCircle, Search, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export default function ProjectsListPage() {
         );
         setProjects(projectsWithDetails);
       }
-    } catch (error) {
+    } catch {
       toast.error("获取项目列表失败");
     } finally {
       setLoading(false);
@@ -132,7 +132,7 @@ export default function ProjectsListPage() {
                 <FolderOpen size={28} strokeWidth={1.5} className="text-brand-secondary" />
               </div>
               <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无项目</h3>
-              <p className="text-brand-secondary text-sm">点击左侧"新建项目"开始创建您的第一个项目</p>
+              <p className="text-brand-secondary text-sm">点击左侧&quot;新建项目&quot;开始创建您的第一个项目</p>
             </CardContent>
           </Card>
         ) : (

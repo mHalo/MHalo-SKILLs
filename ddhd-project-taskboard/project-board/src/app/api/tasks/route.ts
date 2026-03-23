@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 // GET /api/tasks - 获取任务列表
 export async function GET(request: NextRequest) {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const priority = searchParams.get("priority");
 
-    const where: any = {};
+    const where: Prisma.TaskWhereInput = {};
     if (status) where.status = status;
     if (priority) where.priority = priority;
 

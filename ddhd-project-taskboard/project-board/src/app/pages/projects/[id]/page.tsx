@@ -59,6 +59,7 @@ export default function ProjectDetailPage() {
     if (params.id) {
       fetchProject();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
   const fetchProject = async () => {
@@ -69,7 +70,7 @@ export default function ProjectDetailPage() {
       if (data.data) {
         setProject(data.data);
       }
-    } catch (error) {
+    } catch {
       toast.error("获取项目详情失败");
     } finally {
       setLoading(false);

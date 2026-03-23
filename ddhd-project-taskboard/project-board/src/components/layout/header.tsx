@@ -11,13 +11,16 @@ interface HeaderProps {
 }
 
 export function Header({ onSearch }: HeaderProps) {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
 
-  // 避免 hydration 不匹配
+  // 避免 hydration 不匹配 - 使用微任务延迟 setState
   useEffect(() => {
-    setMounted(true);
+    const timeoutId = setTimeout(() => {
+      setMounted(true);
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {

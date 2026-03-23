@@ -10,7 +10,6 @@ import {
   AlertCircle,
   ArrowRight,
   Calendar,
-  Users,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -63,7 +62,7 @@ export default function DashboardPage() {
         setStats(data.data.statistics);
         setRecentProjects(data.data.projects?.slice(0, 5) || []);
       }
-    } catch (error) {
+    } catch {
       toast.error("获取数据失败");
     } finally {
       setLoading(false);
@@ -187,7 +186,7 @@ export default function DashboardPage() {
                 <FolderOpen size={28} strokeWidth={1.5} className="text-brand-secondary" />
               </div>
               <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无项目</h3>
-              <p className="text-brand-secondary text-sm">点击左侧"新建项目"开始创建</p>
+              <p className="text-brand-secondary text-sm">点击左侧&quot;新建项目&quot;开始创建</p>
             </CardContent>
           </Card>
         ) : (

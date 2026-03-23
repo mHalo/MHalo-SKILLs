@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+// 定义项目类型
+interface ProjectWithMeta {
+  id: string;
+  name: string;
+  description: string | null;
+  type: string;
+  status: string;
+  client: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  memberRole: string | null;
+  joinedAt: Date | null;
+  _count: {
+    milestones: number;
+  };
+}
+
 // GET /api/users/[id]/projects - 获取用户负责的所有项目
 export async function GET(
   request: NextRequest,
@@ -75,7 +94,7 @@ export async function GET(
     });
 
     // 合并项目列表并去重
-    const projectMap = new Map();
+    const projectMap = new Map<string, ProjectWithMeta>();
 
     // 添加成员项目
     projectMembers.forEach((pm) => {
@@ -103,8 +122,8 @@ export async function GET(
     // 统计信息
     const stats = {
       totalProjects: projects.length,
-      activeProjects: projects.filter((p: any) => p.status === "进行中").length,
-      completedProjects: projects.filter((p: any) => p.status === "已完成").length,
+      activeProjects: projects.filter((p) => p.status === "进行中").length,
+      completedProjects: projects.filter((p) => p.status === "已完成").length,
       totalTasks: taskAssignees.length,
       completedTasks: taskAssignees.filter((ta) => ta.task.status === "已完成").length,
       inProgressTasks: taskAssignees.filter((ta) => ta.task.status === "进行中").length,
@@ -120,7 +139,7 @@ export async function GET(
           role: user.role,
         },
         stats,
-        projects: projects.map((p: any) => ({
+        projects: projects.map((p) => ({
           id: p.id,
           name: p.name,
           description: p.description,

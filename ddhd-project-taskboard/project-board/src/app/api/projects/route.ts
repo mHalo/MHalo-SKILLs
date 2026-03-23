@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 // GET /api/projects - 获取项目列表
 export async function GET(request: NextRequest) {
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const type = searchParams.get("type");
 
-    const where: any = {};
+    const where: Prisma.ProjectWhereInput = {};
     if (status) where.status = status;
     if (type) where.type = type;
 

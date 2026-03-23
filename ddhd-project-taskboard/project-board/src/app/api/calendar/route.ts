@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 // GET /api/calendar - 获取所有项目的日历事件（全局日历视图）
 export async function GET(request: NextRequest) {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
     const end = searchParams.get("end");
     const projectId = searchParams.get("projectId");
 
-    const where: any = {};
+    const where: Prisma.CalendarEventWhereInput = {};
     
     if (projectId) {
       where.projectId = projectId;

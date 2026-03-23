@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Briefcase, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import Image from "next/image";
+import { Briefcase, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -55,7 +56,7 @@ export default function PeoplePage() {
         );
         setUsers(usersWithDetails);
       }
-    } catch (error) {
+    } catch {
       toast.error("获取人员数据失败");
     } finally {
       setLoading(false);
@@ -118,10 +119,12 @@ export default function PeoplePage() {
                 {/* 头像和基本信息 */}
                 <div className="flex items-start gap-3 mb-3">
                   {user.avatar ? (
-                    <img 
+                    <Image 
                       src={user.avatar} 
                       alt={user.userName}
                       className="w-12 h-12 rounded-lg object-cover bg-brand-main"
+                      width={48}
+                      height={48}
                     />
                   ) : (
                     <div className="w-12 h-12 rounded-lg bg-brand-primary flex items-center justify-center text-white font-semibold text-sm">

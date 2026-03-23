@@ -94,7 +94,7 @@ export async function PUT(
     } = body;
 
     // 更新任务基本信息
-    const task = await prisma.task.update({
+    await prisma.task.update({
       where: { id },
       data: {
         title,

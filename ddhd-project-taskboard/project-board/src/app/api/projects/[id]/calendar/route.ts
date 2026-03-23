@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 // GET /api/projects/[id]/calendar - 获取项目日历事件
 export async function GET(
@@ -12,7 +13,7 @@ export async function GET(
     const start = searchParams.get("start");
     const end = searchParams.get("end");
 
-    const where: any = { projectId };
+    const where: Prisma.CalendarEventWhereInput = { projectId };
     if (start && end) {
       where.eventDate = {
         gte: new Date(start),

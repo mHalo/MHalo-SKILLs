@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 // GET /api/users - 获取用户列表
 export async function GET(request: NextRequest) {
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get("role");
     const status = searchParams.get("status");
 
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
     if (role) where.role = role;
     if (status) where.status = status;
 
