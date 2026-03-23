@@ -75,10 +75,10 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-xl" />
+            <Skeleton key={i} className="h-32 rounded-lg" />
           ))}
         </div>
-        <Skeleton className="h-96 rounded-xl" />
+        <Skeleton className="h-96 rounded-lg" />
       </div>
     );
   }
@@ -183,7 +183,7 @@ export default function DashboardPage() {
         {recentProjects.length === 0 ? (
           <Card className="layout-card">
             <CardContent className="text-center py-12">
-              <div className="w-16 h-16 bg-brand-main rounded-xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-brand-main rounded-lg flex items-center justify-center mx-auto mb-4">
                 <FolderOpen size={28} strokeWidth={1.5} className="text-brand-secondary" />
               </div>
               <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无项目</h3>
@@ -203,7 +203,7 @@ export default function DashboardPage() {
                     <CardContent className="p-4 flex flex-col h-full">
                       {/* 头部：图标和状态 */}
                       <div className="flex items-start justify-between mb-3">
-                        <div className="w-10 h-10 bg-brand-main rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-brand-main rounded-lg flex items-center justify-center">
                           <FolderOpen size={20} strokeWidth={1.5} className="text-brand-secondary" />
                         </div>
                         <span className={`

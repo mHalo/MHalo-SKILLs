@@ -41,7 +41,7 @@ export function Header({ onSearch }: HeaderProps) {
             placeholder="搜索项目..."
             value={searchQuery}
             onChange={handleSearch}
-            className="pl-10 h-10 rounded-lg border-brand-border bg-brand-main focus:bg-white transition-colors"
+            className="pl-10 h-10 rounded-md border-brand-border bg-brand-main focus:bg-white transition-colors"
           />
         </div>
       </div>
@@ -51,7 +51,7 @@ export function Header({ onSearch }: HeaderProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="w-10 h-10 rounded-lg hover:bg-brand-main"
+          className="w-10 h-10 rounded-md hover:bg-brand-main"
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         >
           {mounted ? (
@@ -67,7 +67,7 @@ export function Header({ onSearch }: HeaderProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="w-10 h-10 rounded-lg hover:bg-brand-main"
+          className="w-10 h-10 rounded-md hover:bg-brand-main"
         >
           <Settings size={20} strokeWidth={1.5} className="text-brand-secondary" />
         </Button>

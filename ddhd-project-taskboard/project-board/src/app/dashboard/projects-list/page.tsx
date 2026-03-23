@@ -92,7 +92,7 @@ export default function ProjectsListPage() {
           <Skeleton className="h-10 w-24" />
         </div>
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-40 rounded-xl" />
+          <Skeleton key={i} className="h-40 rounded-lg" />
         ))}
       </div>
     );
@@ -128,7 +128,7 @@ export default function ProjectsListPage() {
         {projects.length === 0 ? (
           <Card className="layout-card">
             <CardContent className="text-center py-12">
-              <div className="w-16 h-16 bg-brand-main rounded-xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-brand-main rounded-lg flex items-center justify-center mx-auto mb-4">
                 <FolderOpen size={28} strokeWidth={1.5} className="text-brand-secondary" />
               </div>
               <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无项目</h3>
@@ -146,7 +146,7 @@ export default function ProjectsListPage() {
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       {/* 项目图标 */}
-                      <div className="w-12 h-12 bg-brand-main rounded-xl flex items-center justify-center shrink-0">
+                      <div className="w-12 h-12 bg-brand-main rounded-lg flex items-center justify-center shrink-0">
                         <FolderOpen size={24} strokeWidth={1.5} className="text-brand-secondary" />
                       </div>
                       

@@ -31,12 +31,12 @@
   --color-input: var(--color-brand-border);
   --color-ring: var(--color-brand-info);
   
-  /* Border Radius - Soft Tech Style */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-2xl: 32px;
+  /* Border Radius - 更小更精致 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
   
   /* Shadows */
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.04);
@@ -67,14 +67,14 @@
 @layer components {
   /* 标准功能卡片容器 - Soft Tech Card */
   .layout-card {
-    @apply bg-brand-card rounded-xl p-4;
+    @apply bg-brand-card rounded-lg p-4;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(232, 237, 236, 0.5);
   }
 
   /* 紧凑卡片 - 更小的内边距 */
   .layout-card-compact {
-    @apply bg-brand-card rounded-xl p-3;
+    @apply bg-brand-card rounded-lg p-3;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(232, 237, 236, 0.5);
   }

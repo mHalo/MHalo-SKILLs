@@ -90,7 +90,7 @@ export default function PeoplePage() {
         <Skeleton className="h-8 w-40" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-48 rounded-xl" />
+            <Skeleton key={i} className="h-48 rounded-lg" />
           ))}
         </div>
       </div>
@@ -121,10 +121,10 @@ export default function PeoplePage() {
                     <img 
                       src={user.avatar} 
                       alt={user.userName}
-                      className="w-12 h-12 rounded-xl object-cover bg-brand-main"
+                      className="w-12 h-12 rounded-lg object-cover bg-brand-main"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-xl bg-brand-primary flex items-center justify-center text-white font-semibold text-sm">
+                    <div className="w-12 h-12 rounded-lg bg-brand-primary flex items-center justify-center text-white font-semibold text-sm">
                       {getInitials(user.userName)}
                     </div>
                   )}

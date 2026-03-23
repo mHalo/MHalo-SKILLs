@@ -96,7 +96,7 @@ export default function CalendarPage() {
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-12 w-full max-w-md" />
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-xl" />
+          <Skeleton key={i} className="h-32 rounded-lg" />
         ))}
       </div>
     );
@@ -132,7 +132,7 @@ export default function CalendarPage() {
         {sortedDates.length === 0 ? (
           <Card className="layout-card">
             <CardContent className="text-center py-12">
-              <div className="w-16 h-16 bg-brand-main rounded-xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-brand-main rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Calendar size={28} strokeWidth={1.5} className="text-brand-secondary" />
               </div>
               <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无事件</h3>
@@ -148,7 +148,7 @@ export default function CalendarPage() {
             <div key={date} className="space-y-3">
               {/* 日期标题 */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-main rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-brand-main rounded-lg flex items-center justify-center">
                   <span className="text-sm font-bold text-brand-primary">
                     {dayNumber}
                   </span>

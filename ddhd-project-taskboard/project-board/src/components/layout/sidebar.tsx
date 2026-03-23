@@ -58,7 +58,7 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Logo区域 */}
       <div className="h-16 flex items-center justify-center border-b border-brand-border">
         <Link href="/" className="flex items-center justify-center">
-          <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-brand-primary flex items-center justify-center">
             <span className="text-white font-bold text-lg">D</span>
           </div>
         </Link>
@@ -68,7 +68,7 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="p-3">
         <Link href="/projects/new" className="block">
           <Button
-            className="w-full h-10 bg-brand-primary hover:opacity-90 text-white font-medium rounded-xl gap-0 shadow-soft transition-all"
+            className="w-full h-10 bg-brand-primary hover:opacity-90 text-white font-medium rounded-lg gap-0 shadow-soft transition-all"
           >
             <Plus size={20} strokeWidth={1.5} />
           </Button>
@@ -86,7 +86,7 @@ export function Sidebar({ className }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center w-full py-3 px-2 rounded-xl transition-all duration-200 gap-1",
+                "flex flex-col items-center justify-center w-full py-3 px-2 rounded-lg transition-all duration-200 gap-1",
                 isActive
                   ? "bg-brand-primary text-white"
                   : "text-brand-secondary hover:bg-brand-main hover:text-brand-primary"

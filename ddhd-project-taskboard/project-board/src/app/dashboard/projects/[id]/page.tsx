@@ -107,8 +107,8 @@ export default function ProjectDetailPage() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-32" />
-        <Skeleton className="h-48 rounded-xl" />
-        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-48 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
       </div>
     );
   }
@@ -116,7 +116,7 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <div className="text-center py-20">
-        <div className="w-20 h-20 bg-brand-main rounded-xl flex items-center justify-center mx-auto mb-6">
+        <div className="w-20 h-20 bg-brand-main rounded-lg flex items-center justify-center mx-auto mb-6">
           <FolderOpen size={32} strokeWidth={1.5} className="text-brand-secondary" />
         </div>
         <h3 className="text-xl font-semibold text-brand-primary mb-2">项目不存在</h3>
@@ -143,7 +143,7 @@ export default function ProjectDetailPage() {
         <div className="bg-brand-primary p-8 text-white">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-5">
-              <div className="w-16 h-16 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center">
+              <div className="w-16 h-16 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
                 <FolderOpen size={32} strokeWidth={1.5} className="text-white" />
               </div>
               <div>
@@ -238,7 +238,7 @@ export default function ProjectDetailPage() {
           {project.milestones?.length === 0 ? (
             <Card className="layout-card">
               <CardContent className="text-center py-12">
-                <div className="w-16 h-16 bg-brand-main rounded-xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-brand-main rounded-lg flex items-center justify-center mx-auto mb-4">
                   <Target size={28} strokeWidth={1.5} className="text-brand-secondary" />
                 </div>
                 <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无里程碑</h3>
@@ -256,7 +256,7 @@ export default function ProjectDetailPage() {
                   <CardHeader className="pb-3 p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-brand-main rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-brand-main rounded-lg flex items-center justify-center">
                           <Target size={20} strokeWidth={1.5} className="text-brand-secondary" />
                         </div>
                         <div>
@@ -347,7 +347,7 @@ export default function ProjectDetailPage() {
             <CardContent className="p-0">
               {project.milestones?.flatMap(m => m.tasks || []).length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-brand-main rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-brand-main rounded-lg flex items-center justify-center mx-auto mb-4">
                     <Flag size={28} strokeWidth={1.5} className="text-brand-secondary" />
                   </div>
                   <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无任务</h3>
