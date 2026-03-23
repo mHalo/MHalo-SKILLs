@@ -7,18 +7,20 @@ import {
   FolderOpen,
   ArrowLeft,
   Calendar,
-  Users,
   CheckCircle2,
   Clock,
   AlertCircle,
   Plus,
   Target,
   Flag,
+  ChevronRight,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
 interface Project {
@@ -77,22 +79,40 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "进行中": return "bg-brand-success/10 text-brand-success";
-      case "已完成": return "bg-brand-info/10 text-brand-info";
-      case "暂停": return "bg-brand-warning/10 text-brand-warning";
-      default: return "bg-brand-main text-brand-secondary";
-    }
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      "进行中": "default",
+      "已完成": "secondary",
+      "暂停": "destructive",
+      "待开始": "outline",
+    };
+    return (
+      <Badge variant={variants[status] || "outline"} className="text-xs">
+        {status}
+      </Badge>
+    );
   };
 
   const getTaskStatusIcon = (status: string) => {
     switch (status) {
-      case "已完成": return <CheckCircle2 size={16} strokeWidth={1.5} className="text-brand-success" />;
-      case "进行中": return <Clock size={16} strokeWidth={1.5} className="text-brand-info" />;
-      case "有风险": return <AlertCircle size={16} strokeWidth={1.5} className="text-brand-warning" />;
-      default: return <div className="w-2 h-2 bg-brand-secondary rounded-full" />;
+      case "已完成": return <CheckCircle2 size={14} className="text-green-500" />;
+      case "进行中": return <Clock size={14} className="text-blue-500" />;
+      case "有风险": return <AlertCircle size={14} className="text-amber-500" />;
+      default: return <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300" />;
     }
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    const colors: Record<string, string> = {
+      "P0": "bg-red-100 text-red-700",
+      "P1": "bg-amber-100 text-amber-700",
+      "P2": "bg-blue-100 text-blue-700",
+    };
+    return (
+      <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors[priority] || "bg-gray-100 text-gray-600"}`}>
+        {priority}
+      </span>
+    );
   };
 
   const getProjectProgress = () => {
@@ -106,9 +126,9 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-32" />
-        <Skeleton className="h-48 rounded-lg" />
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-32 rounded-lg" />
         <Skeleton className="h-64 rounded-lg" />
       </div>
     );
@@ -116,223 +136,202 @@ export default function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div className="text-center py-20">
-        <div className="w-20 h-20 bg-brand-main rounded-lg flex items-center justify-center mx-auto mb-6">
-          <FolderOpen size={32} strokeWidth={1.5} className="text-brand-secondary" />
+      <div className="text-center py-16">
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+          <FolderOpen size={28} strokeWidth={1.5} className="text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold text-brand-primary mb-2">项目不存在</h3>
-        <Link href="/projects-list" className="text-brand-info hover:underline">
+        <h3 className="text-lg font-semibold mb-2">项目不存在</h3>
+        <Link href="/projects-list" className="text-primary hover:underline text-sm">
           返回项目列表
         </Link>
       </div>
     );
   }
 
+  const progress = getProjectProgress();
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 返回按钮 */}
       <Link 
         href="/projects-list"
-        className="inline-flex items-center gap-2 text-brand-secondary hover:text-brand-primary transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft size={16} strokeWidth={1.5} />
-        返回项目列表
+        <ArrowLeft size={14} />
+        返回列表
       </Link>
 
-      {/* 项目头部信息 - Soft Tech Style */}
-      <Card className="layout-card overflow-hidden">
-        <div className="bg-brand-primary p-8 text-white">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-5">
-              <div className="w-16 h-16 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
-                <FolderOpen size={32} strokeWidth={1.5} className="text-white" />
+      {/* 项目头部信息 */}
+      <Card>
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-xl font-semibold truncate">{project.name}</h1>
+                {getStatusBadge(project.status)}
               </div>
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl font-bold">{project.name}</h1>
-                  <span className={`px-3 py-1 rounded-md text-xs font-medium ${getStatusStyle(project.status)}`}>
-                    {project.status}
-                  </span>
-                </div>
-                <p className="text-white/70 max-w-xl">
-                  {project.description || "暂无项目描述"}
-                </p>
-                <div className="flex items-center gap-6 mt-4 text-sm text-white/70">
-                  <span className="flex items-center gap-2">
-                    <Calendar size={16} strokeWidth={1.5} />
-                    创建于 {new Date(project.createdAt).toLocaleDateString("zh-CN")}
-                  </span>
-                  {project.client && (
-                    <span className="flex items-center gap-2">
-                      <Users size={16} strokeWidth={1.5} />
-                      客户: {project.client}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-4xl font-bold">{getProjectProgress()}%</div>
-              <p className="text-white/60 text-sm">完成进度</p>
-            </div>
-          </div>
-        </div>
-
-        <CardContent className="p-4">
-          {/* 进度条 */}
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-brand-secondary">整体进度</span>
-              <span className="font-medium text-brand-primary">{getProjectProgress()}%</span>
-            </div>
-            <div className="progress-track">
-              <div 
-                className="progress-fill-success transition-all duration-500"
-                style={{ width: `${getProjectProgress()}%` }}
-              />
-            </div>
-          </div>
-
-          {/* 成员头像 */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-brand-secondary">项目成员</span>
-              <div className="flex -space-x-2">
-                {project.members?.slice(0, 5).map((member, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-full bg-brand-main border-2 border-white flex items-center justify-center text-sm font-medium text-brand-primary"
-                    title={member.user.userName}
-                  >
-                    {member.user.userName.slice(0, 1)}
-                  </div>
-                ))}
-                {(project.members?.length || 0) > 5 && (
-                  <div className="w-8 h-8 rounded-full bg-brand-border border-2 border-white flex items-center justify-center text-sm text-brand-secondary">
-                    +{project.members!.length - 5}
-                  </div>
+              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                {project.description || "暂无项目描述"}
+              </p>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Calendar size={12} />
+                  {new Date(project.createdAt).toLocaleDateString("zh-CN")}
+                </span>
+                {project.client && (
+                  <span>客户: {project.client}</span>
                 )}
               </div>
             </div>
-            <Button className="rounded-md gap-2 bg-brand-primary hover:opacity-90 h-9 px-3">
-              <Plus size={16} strokeWidth={1.5} />
-              添加成员
-            </Button>
+            
+            {/* 进度环形指示器 */}
+            <div className="flex flex-col items-center">
+              <div className="relative w-16 h-16">
+                <svg className="w-16 h-16 -rotate-90">
+                  <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="none" className="text-muted/30" />
+                  <circle 
+                    cx="32" 
+                    cy="32" 
+                    r="28" 
+                    stroke="currentColor" 
+                    strokeWidth="4" 
+                    fill="none"
+                    strokeDasharray={`${progress * 1.76} 176`}
+                    className="text-primary transition-all duration-500"
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold">
+                  {progress}%
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground mt-1">完成度</span>
+            </div>
+          </div>
+
+          {/* 成员和进度条 */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">成员</span>
+                <div className="flex -space-x-1.5">
+                  {project.members?.slice(0, 4).map((member, i) => (
+                    <Avatar key={i} className="w-7 h-7 border-2 border-background">
+                      <AvatarFallback className="text-[10px] bg-muted">
+                        {member.user.userName.slice(0, 1)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {(project.members?.length || 0) > 4 && (
+                    <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] text-muted-foreground">
+                      +{project.members!.length - 4}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Button size="sm" variant="ghost" className="h-7 text-xs">
+                <Plus size={14} className="mr-1" />
+                添加
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* 里程碑和任务 */}
       <Tabs defaultValue="milestones" className="w-full">
-        <TabsList className="bg-brand-main p-1 rounded-md">
-          <TabsTrigger value="milestones" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-card">
-            <Target size={16} strokeWidth={1.5} className="mr-2" />
+        <TabsList className="w-full grid grid-cols-2 h-9">
+          <TabsTrigger value="milestones" className="text-xs">
+            <Target size={14} className="mr-1.5" />
             里程碑
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-card">
-            <Flag size={16} strokeWidth={1.5} className="mr-2" />
-            所有任务
+          <TabsTrigger value="tasks" className="text-xs">
+            <Flag size={14} className="mr-1.5" />
+            任务
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="milestones" className="mt-4 space-y-4">
+        <TabsContent value="milestones" className="mt-3 space-y-3">
           {project.milestones?.length === 0 ? (
-            <Card className="layout-card">
-              <CardContent className="text-center py-12">
-                <div className="w-16 h-16 bg-brand-main rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Target size={28} strokeWidth={1.5} className="text-brand-secondary" />
-                </div>
-                <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无里程碑</h3>
-                <p className="text-brand-secondary text-sm">添加里程碑来规划项目阶段</p>
+            <Card>
+              <CardContent className="py-10 text-center">
+                <Target size={32} className="mx-auto mb-3 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">暂无里程碑</p>
               </CardContent>
             </Card>
           ) : (
             project.milestones?.map((milestone) => {
               const completedTasks = milestone.tasks?.filter(t => t.status === "已完成").length || 0;
               const totalTasks = milestone.tasks?.length || 0;
-              const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+              const mProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
               return (
-                <Card key={milestone.id} className="layout-card">
-                  <CardHeader className="pb-3 p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-brand-main rounded-lg flex items-center justify-center">
-                          <Target size={20} strokeWidth={1.5} className="text-brand-secondary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-base font-semibold text-brand-primary">
-                            {milestone.name}
-                          </CardTitle>
-                          <p className="text-xs text-brand-secondary mt-0.5">
-                            {milestone.description || "暂无描述"}
-                          </p>
-                          <div className="flex items-center gap-3 mt-1.5 text-xs text-brand-secondary">
+                <Card key={milestone.id} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    {/* 里程碑头部 */}
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-sm truncate">{milestone.name}</h3>
+                            {getStatusBadge(milestone.status)}
+                          </div>
+                          {milestone.description && (
+                            <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                              {milestone.description}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <Calendar size={14} strokeWidth={1.5} />
+                              <Calendar size={12} />
                               {milestone.dueDate 
-                                ? new Date(milestone.dueDate).toLocaleDateString("zh-CN")
-                                : "无截止日期"
+                                ? new Date(milestone.dueDate).toLocaleDateString("zh-CN", {month: "short", day: "numeric"})
+                                : "无截止"
                               }
                             </span>
-                            <span className="flex items-center gap-1">
-                              <CheckCircle2 size={14} strokeWidth={1.5} />
-                              {completedTasks}/{totalTasks} 任务完成
-                            </span>
+                            <span>{completedTasks}/{totalTasks} 任务</span>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <span className="text-lg font-semibold">{mProgress}%</span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${getStatusStyle(milestone.status)}`}>
-                          {milestone.status}
-                        </span>
-                        <div className="text-xl font-bold text-brand-primary mt-1">{progress}%</div>
+                      
+                      {/* 进度条 */}
+                      <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{ width: `${mProgress}%` }}
+                        />
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0 p-4">
-                    <div className="progress-track mb-3">
-                      <div 
-                        className="progress-fill-info transition-all duration-500"
-                        style={{ width: `${progress}%` }}
-                      />
                     </div>
                     
                     {/* 任务列表 */}
                     {milestone.tasks && milestone.tasks.length > 0 && (
-                      <div className="space-y-1.5">
+                      <div className="border-t border-border/50">
                         {milestone.tasks.slice(0, 3).map((task) => (
                           <div 
                             key={task.id}
-                            className="flex items-center justify-between p-2.5 bg-brand-main rounded-md hover:bg-brand-border/50 transition-colors"
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors border-b border-border/50 last:border-0"
                           >
-                            <div className="flex items-center gap-2">
-                              {getTaskStatusIcon(task.status)}
-                              <span className="font-medium text-brand-primary text-sm">{task.title}</span>
-                              <span className={`px-1.5 py-0.5 rounded text-xs ${
-                                task.priority === "紧急" ? "bg-brand-warning/10 text-brand-warning" :
-                                task.priority === "高" ? "bg-brand-warning/10 text-brand-warning" :
-                                "bg-brand-main text-brand-secondary"
-                              }`}>
-                                {task.priority}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {task.assignees?.map((a, i) => (
-                                <div
-                                  key={i}
-                                  className="w-6 h-6 rounded-full bg-brand-card border border-brand-border flex items-center justify-center text-xs text-brand-primary"
-                                >
-                                  {a.user.userName.slice(0, 1)}
-                                </div>
+                            {getTaskStatusIcon(task.status)}
+                            <span className="flex-1 text-sm truncate">{task.title}</span>
+                            {getPriorityBadge(task.priority)}
+                            <div className="flex -space-x-1">
+                              {task.assignees?.slice(0, 2).map((a, i) => (
+                                <Avatar key={i} className="w-5 h-5 border border-background">
+                                  <AvatarFallback className="text-[8px] bg-muted">
+                                    {a.user.userName.slice(0, 1)}
+                                  </AvatarFallback>
+                                </Avatar>
                               ))}
                             </div>
                           </div>
                         ))}
                         {milestone.tasks.length > 3 && (
-                          <Button variant="ghost" className="w-full text-brand-info hover:text-brand-primary h-8 text-sm">
+                          <button className="w-full py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors flex items-center justify-center gap-1">
                             查看全部 {milestone.tasks.length} 个任务
-                          </Button>
+                            <ChevronRight size={12} />
+                          </button>
                         )}
                       </div>
                     )}
@@ -343,52 +342,37 @@ export default function ProjectDetailPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="tasks" className="mt-4">
-          <Card className="layout-card">
+        <TabsContent value="tasks" className="mt-3">
+          <Card>
             <CardContent className="p-0">
               {project.milestones?.flatMap(m => m.tasks || []).length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-brand-main rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Flag size={28} strokeWidth={1.5} className="text-brand-secondary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无任务</h3>
-                  <p className="text-brand-secondary text-sm">添加任务来跟踪工作进度</p>
+                <div className="py-10 text-center">
+                  <Flag size={32} className="mx-auto mb-3 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">暂无任务</p>
                 </div>
               ) : (
-                <div className="divide-y divide-brand-border">
+                <div className="divide-y divide-border/50">
                   {project.milestones?.flatMap(m => 
                     (m.tasks || []).map(task => ({ ...task, milestoneName: m.name }))
                   ).map((task: Task & { milestoneName: string }) => (
                     <div 
                       key={task.id}
-                      className="flex items-center justify-between p-3 hover:bg-brand-main transition-colors"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
                     >
-                      <div className="flex items-center gap-3">
-                        {getTaskStatusIcon(task.status)}
-                        <div>
-                          <p className="font-medium text-brand-primary text-sm">{task.title}</p>
-                          <p className="text-xs text-brand-secondary">{task.milestoneName}</p>
-                        </div>
+                      {getTaskStatusIcon(task.status)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate">{task.title}</p>
+                        <p className="text-xs text-muted-foreground">{task.milestoneName}</p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-0.5 rounded text-xs ${
-                          task.priority === "紧急" ? "bg-brand-warning/10 text-brand-warning" :
-                          task.priority === "高" ? "bg-brand-warning/10 text-brand-warning" :
-                          task.priority === "中" ? "bg-brand-info/10 text-brand-info" :
-                          "bg-brand-main text-brand-secondary"
-                        }`}>
-                          {task.priority}优先级
-                        </span>
-                        <div className="flex -space-x-2">
-                          {task.assignees?.slice(0, 3).map((a, i) => (
-                            <div
-                              key={i}
-                              className="w-7 h-7 rounded-full bg-brand-main border-2 border-white flex items-center justify-center text-xs text-brand-primary"
-                            >
+                      {getPriorityBadge(task.priority)}
+                      <div className="flex -space-x-1">
+                        {task.assignees?.slice(0, 2).map((a, i) => (
+                          <Avatar key={i} className="w-6 h-6 border border-background">
+                            <AvatarFallback className="text-[10px] bg-muted">
                               {a.user.userName.slice(0, 1)}
-                            </div>
-                          ))}
-                        </div>
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
                       </div>
                     </div>
                   ))}
