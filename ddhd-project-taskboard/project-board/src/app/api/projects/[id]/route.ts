@@ -15,8 +15,17 @@ export async function GET(
         milestones: {
           orderBy: { order: "asc" },
           include: {
-            _count: {
-              select: { tasks: true },
+            tasks: {
+              orderBy: { createdAt: "asc" },
+              include: {
+                assignees: {
+                  include: {
+                    user: {
+                      select: { id: true, userId: true, userName: true, avatar: true },
+                    },
+                  },
+                },
+              },
             },
           },
         },
