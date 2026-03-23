@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -9,16 +9,15 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  AlertCircle,
   Plus,
-  Target,
-  Flag,
-  ChevronRight,
+  Trash2,
+  ChevronDown,
+  Filter,
+  MoreHorizontal,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -29,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -37,6 +37,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Project {
@@ -66,20 +73,37 @@ interface Task {
   status: string;
   priority: string;
   assignees: { user: { userName: string } }[];
+  createdAt: string;
 }
+
+type TaskFilter = "all" | "completed" | "incomplete";
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("milestones");
   
-  // 创建任务弹窗状态
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
+  
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newTaskMilestoneId, setNewTaskMilestoneId] = useState<string>("");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState("P1");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    type: "delete" | "toggle";
+    taskId: string;
+    taskTitle: string;
+    newStatus?: string;
+  }>({
+    isOpen: false,
+    type: "delete",
+    taskId: "",
+    taskTitle: "",
+  });
 
   useEffect(() => {
     if (params.id) {
@@ -95,6 +119,9 @@ export default function ProjectDetailPage() {
       const data = await res.json();
       if (data.data) {
         setProject(data.data);
+        if (!selectedMilestoneId && data.data.milestones?.length > 0) {
+          setSelectedMilestoneId(data.data.milestones[0].id);
+        }
       }
     } catch {
       toast.error("获取项目详情失败");
@@ -103,13 +130,36 @@ export default function ProjectDetailPage() {
     }
   };
 
-  // 创建任务
+  const selectedMilestone = useMemo(() => {
+    return project?.milestones?.find(m => m.id === selectedMilestoneId);
+  }, [project, selectedMilestoneId]);
+
+  const filteredTasks = useMemo(() => {
+    if (!selectedMilestone) return [];
+    let tasks = selectedMilestone.tasks || [];
+    
+    if (taskFilter === "completed") {
+      tasks = tasks.filter(t => t.status === "已完成");
+    } else if (taskFilter === "incomplete") {
+      tasks = tasks.filter(t => t.status !== "已完成");
+    }
+    
+    return tasks;
+  }, [selectedMilestone, taskFilter]);
+
+  const taskProgress = useMemo(() => {
+    if (!selectedMilestone) return 0;
+    const total = selectedMilestone.tasks?.length || 0;
+    const completed = selectedMilestone.tasks?.filter(t => t.status === "已完成").length || 0;
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+  }, [selectedMilestone]);
+
   const handleCreateTask = async () => {
     if (!newTaskTitle.trim()) {
       toast.error("请输入任务名称");
       return;
     }
-    if (!selectedMilestoneId) {
+    if (!newTaskMilestoneId) {
       toast.error("请选择里程碑");
       return;
     }
@@ -121,7 +171,7 @@ export default function ProjectDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: newTaskTitle,
-          milestoneId: selectedMilestoneId,
+          milestoneId: newTaskMilestoneId,
           priority: newTaskPriority,
           status: "待开始",
         }),
@@ -132,7 +182,6 @@ export default function ProjectDetailPage() {
         setIsCreateDialogOpen(false);
         setNewTaskTitle("");
         setNewTaskPriority("P1");
-        // 静默刷新，不显示加载状态
         await fetchProject(false);
       } else {
         const error = await res.json().catch(() => ({}));
@@ -145,14 +194,68 @@ export default function ProjectDetailPage() {
     }
   };
 
-  // 打开创建弹窗
   const openCreateDialog = (milestoneId?: string) => {
     if (milestoneId) {
-      setSelectedMilestoneId(milestoneId);
-    } else if (project?.milestones[0]) {
-      setSelectedMilestoneId(project.milestones[0].id);
+      setNewTaskMilestoneId(milestoneId);
+    } else if (selectedMilestoneId) {
+      setNewTaskMilestoneId(selectedMilestoneId);
     }
     setIsCreateDialogOpen(true);
+  };
+
+  const handleDeleteTask = async () => {
+    if (!confirmDialog.taskId) return;
+    
+    try {
+      const res = await fetch(`/api/tasks/${confirmDialog.taskId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        toast.success("任务已删除");
+        await fetchProject(false);
+      } else {
+        toast.error("删除任务失败");
+      }
+    } catch {
+      toast.error("删除任务失败");
+    } finally {
+      setConfirmDialog({ isOpen: false, type: "delete", taskId: "", taskTitle: "" });
+    }
+  };
+
+  const handleToggleTaskStatus = async () => {
+    if (!confirmDialog.taskId || !confirmDialog.newStatus) return;
+    
+    try {
+      const res = await fetch(`/api/tasks/${confirmDialog.taskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: confirmDialog.newStatus }),
+      });
+
+      if (res.ok) {
+        toast.success(`任务已${confirmDialog.newStatus === "已完成" ? "完成" : "重启"}`);
+        await fetchProject(false);
+      } else {
+        toast.error("更新任务状态失败");
+      }
+    } catch {
+      toast.error("更新任务状态失败");
+    } finally {
+      setConfirmDialog({ isOpen: false, type: "toggle", taskId: "", taskTitle: "" });
+    }
+  };
+
+  const openConfirmDialog = (type: "delete" | "toggle", task: Task) => {
+    const newStatus = task.status === "已完成" ? "进行中" : "已完成";
+    setConfirmDialog({
+      isOpen: true,
+      type,
+      taskId: task.id,
+      taskTitle: task.title,
+      newStatus,
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -169,20 +272,11 @@ export default function ProjectDetailPage() {
     );
   };
 
-  const getTaskStatusIcon = (status: string) => {
-    switch (status) {
-      case "已完成": return <CheckCircle2 size={14} className="text-green-500" />;
-      case "进行中": return <Clock size={14} className="text-blue-500" />;
-      case "有风险": return <AlertCircle size={14} className="text-amber-500" />;
-      default: return <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300" />;
-    }
-  };
-
   const getPriorityBadge = (priority: string) => {
     const colors: Record<string, string> = {
-      "P0": "bg-red-100 text-red-700",
-      "P1": "bg-amber-100 text-amber-700",
-      "P2": "bg-blue-100 text-blue-700",
+      "P0": "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+      "P1": "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+      "P2": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
     };
     return (
       <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors[priority] || "bg-gray-100 text-gray-600"}`}>
@@ -205,7 +299,10 @@ export default function ProjectDetailPage() {
       <div className="space-y-4">
         <Skeleton className="h-8 w-32" />
         <Skeleton className="h-32 rounded-lg" />
-        <Skeleton className="h-64 rounded-lg" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Skeleton className="h-96 rounded-lg" />
+          <Skeleton className="h-96 rounded-lg lg:col-span-2" />
+        </div>
       </div>
     );
   }
@@ -227,8 +324,7 @@ export default function ProjectDetailPage() {
   const progress = getProjectProgress();
 
   return (
-    <div className="space-y-4">
-      {/* 返回按钮 */}
+    <div className="space-y-4 h-full flex flex-col">
       <Link 
         href="/projects-list"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -237,7 +333,6 @@ export default function ProjectDetailPage() {
         返回列表
       </Link>
 
-      {/* 项目头部信息 */}
       <Card>
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-4">
@@ -260,7 +355,6 @@ export default function ProjectDetailPage() {
               </div>
             </div>
             
-            {/* 进度环形指示器 */}
             <div className="flex flex-col items-center">
               <div className="relative w-16 h-16">
                 <svg className="w-16 h-16 -rotate-90">
@@ -284,7 +378,6 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
-          {/* 成员 */}
           <div className="mt-4 pt-4 border-t border-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -304,179 +397,259 @@ export default function ProjectDetailPage() {
                   )}
                 </div>
               </div>
-              <Button 
-                size="sm" 
-                className="h-8 text-xs"
-                onClick={() => openCreateDialog()}
-              >
-                <Plus size={14} className="mr-1" />
-                添加任务
-              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* 使用 shadcn Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col">
-        <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="milestones" className="gap-2">
-            <Target size={16} />
-            里程碑
-          </TabsTrigger>
-          <TabsTrigger value="tasks" className="gap-2">
-            <Flag size={16} />
-            任务
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="milestones" className="mt-4 space-y-3 w-full block">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 flex-1 min-h-0">
+        <div className="lg:col-span-1 flex flex-col gap-2 overflow-auto">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm font-medium text-muted-foreground">里程碑</h2>
+            <span className="text-xs text-muted-foreground">{project.milestones?.length || 0} 个</span>
+          </div>
+          
           {project.milestones?.length === 0 ? (
-            <Card>
+            <Card className="flex-1">
               <CardContent className="py-10 text-center">
-                <Target size={32} className="mx-auto mb-3 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">暂无里程碑</p>
               </CardContent>
             </Card>
           ) : (
-            project.milestones?.map((milestone) => {
-              const completedTasks = milestone.tasks?.filter(t => t.status === "已完成").length || 0;
-              const totalTasks = milestone.tasks?.length || 0;
-              const mProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            <div className="space-y-2">
+              {project.milestones?.map((milestone) => {
+                const completedTasks = milestone.tasks?.filter(t => t.status === "已完成").length || 0;
+                const totalTasks = milestone.tasks?.length || 0;
+                const isSelected = selectedMilestoneId === milestone.id;
 
-              return (
-                <Card key={milestone.id} className="overflow-hidden">
-                  <CardContent className="p-0">
-                    {/* 里程碑头部 */}
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium text-sm truncate">{milestone.name}</h3>
-                            {getStatusBadge(milestone.status)}
-                          </div>
-                          {milestone.description && (
-                            <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
-                              {milestone.description}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar size={12} />
-                              {milestone.dueDate 
-                                ? new Date(milestone.dueDate).toLocaleDateString("zh-CN", {month: "short", day: "numeric"})
-                                : "无截止"
-                              }
-                            </span>
-                            <span>{completedTasks}/{totalTasks} 任务</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-lg font-semibold">{mProgress}%</span>
-                        </div>
-                      </div>
-                      
-                      {/* 进度条 */}
-                      <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all duration-300"
-                          style={{ width: `${mProgress}%` }}
-                        />
-                      </div>
+                return (
+                  <button
+                    key={milestone.id}
+                    onClick={() => setSelectedMilestoneId(milestone.id)}
+                    className={cn(
+                      "w-full text-left p-3 rounded-lg border-2 transition-all duration-200",
+                      isSelected 
+                        ? "border-primary bg-primary/10 shadow-sm" 
+                        : "border-border hover:border-primary/50 hover:bg-muted/30"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className={cn(
+                        "font-medium text-sm truncate",
+                        isSelected && "text-primary"
+                      )}>
+                        {milestone.name}
+                      </h3>
+                      {isSelected && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
+                      )}
                     </div>
                     
-                    {/* 任务列表 */}
-                    {milestone.tasks && milestone.tasks.length > 0 && (
-                      <div className="border-t border-border/50">
-                        {milestone.tasks.slice(0, 3).map((task) => (
-                          <div 
-                            key={task.id}
-                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors border-b border-border/50 last:border-0"
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={11} />
+                        {milestone.dueDate 
+                          ? new Date(milestone.dueDate).toLocaleDateString("zh-CN", {month: "short", day: "numeric"})
+                          : "无截止"
+                        }
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 size={11} />
+                        {completedTasks}/{totalTasks}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-3 flex flex-col gap-3 min-h-0">
+          {selectedMilestone ? (
+            <>
+              <Card className="shrink-0">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <h2 className="font-medium text-sm">{selectedMilestone.name}</h2>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedMilestone.tasks?.filter(t => t.status === "已完成").length || 0} / {selectedMilestone.tasks?.length || 0} 任务已完成
+                      </p>
+                    </div>
+                    <span className="text-lg font-semibold text-primary">{taskProgress}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300 rounded-full"
+                      style={{ width: `${taskProgress}%` }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex items-center justify-between gap-3 shrink-0">
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
+                  <Button
+                    variant={taskFilter === "all" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setTaskFilter("all")}
+                  >
+                    全部
+                  </Button>
+                  <Button
+                    variant={taskFilter === "completed" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setTaskFilter("completed")}
+                  >
+                    已完成
+                  </Button>
+                  <Button
+                    variant={taskFilter === "incomplete" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setTaskFilter("incomplete")}
+                  >
+                    未完成
+                  </Button>
+                </div>
+                
+                <Button 
+                  size="sm" 
+                  className="h-8 text-xs"
+                  onClick={() => openCreateDialog()}
+                >
+                  <Plus size={14} className="mr-1" />
+                  添加任务
+                </Button>
+              </div>
+
+              <div className="flex-1 overflow-auto space-y-2">
+                {filteredTasks.length === 0 ? (
+                  <Card className="flex-1">
+                    <CardContent className="py-12 text-center">
+                      <Filter size={32} className="mx-auto mb-3 text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground">
+                        {taskFilter === "all" ? "暂无任务" : "没有符合条件的任务"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  filteredTasks.map((task) => (
+                    <Card 
+                      key={task.id} 
+                      className={cn(
+                        "group hover:shadow-sm transition-all duration-200",
+                        task.status === "已完成" 
+                          ? "bg-green-50/50 dark:bg-green-900/10" 
+                          : "bg-card"
+                      )}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            role="checkbox"
+                            aria-checked={task.status === "已完成"}
+                            onClick={() => openConfirmDialog("toggle", task)}
+                            className={cn(
+                              "w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 cursor-pointer",
+                              task.status === "已完成"
+                                ? "bg-green-500 border-green-500 text-white"
+                                : "border-gray-300 hover:border-primary dark:border-gray-600"
+                            )}
                           >
-                            {getTaskStatusIcon(task.status)}
-                            <span className="flex-1 text-sm truncate">{task.title}</span>
-                            {getPriorityBadge(task.priority)}
+                            {task.status === "已完成" && <CheckCircle2 size={12} />}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className={cn(
+                                "text-sm truncate",
+                                task.status === "已完成" && "line-through text-muted-foreground"
+                              )}>
+                                {task.title}
+                              </p>
+                              {getPriorityBadge(task.priority)}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(task.createdAt).toLocaleDateString("zh-CN")}
+                              </span>
+                              {task.status !== "已完成" && task.status !== "待开始" && (
+                                <span className={cn(
+                                  "text-[10px] px-1.5 py-0.5 rounded",
+                                  task.status === "进行中" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                                  task.status === "有风险" && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+                                )}>
+                                  {task.status}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 shrink-0">
                             <div className="flex -space-x-1">
                               {task.assignees?.slice(0, 2).map((a, i) => (
-                                <Avatar key={i} className="w-5 h-5 border border-background">
-                                  <AvatarFallback className="text-[8px] bg-muted">
+                                <Avatar key={i} className="w-6 h-6 border border-background">
+                                  <AvatarFallback className="text-[10px] bg-muted">
                                     {a.user.userName.slice(0, 1)}
                                   </AvatarFallback>
                                 </Avatar>
                               ))}
+                              {task.assignees?.length === 0 && (
+                                <div className="w-6 h-6 rounded-full border border-dashed border-muted-foreground/50 flex items-center justify-center">
+                                  <span className="text-[10px] text-muted-foreground">?</span>
+                                </div>
+                              )}
                             </div>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger 
+                                className="h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted"
+                              >
+                                <MoreHorizontal size={14} />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => openConfirmDialog("toggle", task)}
+                                  className="text-xs"
+                                >
+                                  {task.status === "已完成" ? (
+                                    <><Clock size={12} className="mr-2" /> 标记为未完成</>
+                                  ) : (
+                                    <><CheckCircle2 size={12} className="mr-2" /> 标记为完成</>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => openConfirmDialog("delete", task)}
+                                  className="text-xs text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 size={12} className="mr-2" />
+                                  删除任务
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                        ))}
-                        {milestone.tasks.length > 3 && (
-                          <button className="w-full py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors flex items-center justify-center gap-1">
-                            查看全部 {milestone.tasks.length} 个任务
-                            <ChevronRight size={12} />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* 添加任务按钮 */}
-                    <div className="px-4 py-2 border-t border-border/50">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
-                        onClick={() => openCreateDialog(milestone.id)}
-                      >
-                        <Plus size={14} className="mr-1" />
-                        添加任务
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <Card className="flex-1 flex items-center justify-center">
+              <CardContent className="text-center py-12">
+                <ChevronDown size={32} className="mx-auto mb-3 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">请选择一个里程碑查看任务</p>
+              </CardContent>
+            </Card>
           )}
-        </TabsContent>
+        </div>
+      </div>
 
-        <TabsContent value="tasks" className="mt-4 w-full block">
-          <Card>
-            <CardContent className="p-0">
-              {project.milestones?.flatMap(m => m.tasks || []).length === 0 ? (
-                <div className="py-10 text-center">
-                  <Flag size={32} className="mx-auto mb-3 text-muted-foreground/50" />
-                  <p className="text-sm text-muted-foreground">暂无任务</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/50">
-                  {project.milestones?.flatMap(m => 
-                    (m.tasks || []).map(task => ({ ...task, milestoneName: m.name }))
-                  ).map((task: Task & { milestoneName: string }) => (
-                    <div 
-                      key={task.id}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
-                    >
-                      {getTaskStatusIcon(task.status)}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm truncate">{task.title}</p>
-                        <p className="text-xs text-muted-foreground">{task.milestoneName}</p>
-                      </div>
-                      {getPriorityBadge(task.priority)}
-                      <div className="flex -space-x-1">
-                        {task.assignees?.slice(0, 2).map((a, i) => (
-                          <Avatar key={i} className="w-6 h-6 border border-background">
-                            <AvatarFallback className="text-[10px] bg-muted">
-                              {a.user.userName.slice(0, 1)}
-                            </AvatarFallback>
-                          </Avatar>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* 创建任务弹窗 */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -486,12 +659,12 @@ export default function ProjectDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="milestone">所属里程碑</Label>
               <Select 
-                value={selectedMilestoneId} 
-                onValueChange={setSelectedMilestoneId}
+                value={newTaskMilestoneId} 
+                onValueChange={setNewTaskMilestoneId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="选择里程碑">
-                    {selectedMilestoneId && project?.milestones?.find(m => m.id === selectedMilestoneId)?.name}
+                    {newTaskMilestoneId && project?.milestones?.find(m => m.id === newTaskMilestoneId)?.name}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -539,6 +712,37 @@ export default function ProjectDetailPage() {
               disabled={isSubmitting}
             >
               {isSubmitting ? "创建中..." : "创建"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {confirmDialog.type === "delete" ? "确认删除任务" : "确认更改任务状态"}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmDialog.type === "delete" ? (
+                <>确定要删除任务「<strong>{confirmDialog.taskTitle}</strong>」吗？此操作不可撤销。</>
+              ) : (
+                <>确定要将任务「<strong>{confirmDialog.taskTitle}</strong>」标记为{confirmDialog.newStatus === "已完成" ? "已完成" : "未完成"}吗？</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+            >
+              取消
+            </Button>
+            <Button 
+              variant={confirmDialog.type === "delete" ? "destructive" : "default"}
+              onClick={confirmDialog.type === "delete" ? handleDeleteTask : handleToggleTaskStatus}
+            >
+              {confirmDialog.type === "delete" ? "删除" : "确认"}
             </Button>
           </DialogFooter>
         </DialogContent>

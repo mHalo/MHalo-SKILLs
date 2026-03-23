@@ -8,31 +8,14 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-
     const task = await prisma.task.findUnique({
       where: { id },
       include: {
         milestone: {
-          select: { id: true, name: true, projectId: true },
-        },
-        parentTask: {
-          select: { id: true, title: true },
-        },
-        subTasks: {
-          orderBy: { createdAt: "asc" },
-          include: {
-            assignees: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    userId: true,
-                    userName: true,
-                    avatar: true,
-                  },
-                },
-              },
-            },
+          select: {
+            id: true,
+            name: true,
+            projectId: true,
           },
         },
         assignees: {
@@ -40,10 +23,7 @@ export async function GET(
             user: {
               select: {
                 id: true,
-                userId: true,
                 userName: true,
-                avatar: true,
-                role: true,
               },
             },
           },
@@ -51,22 +31,21 @@ export async function GET(
         changeLogs: {
           orderBy: { changedAt: "desc" },
         },
-        deliverables: true,
       },
     });
 
     if (!task) {
       return NextResponse.json(
-        { error: "任务不存在" },
+        { error: "Task not found" },
         { status: 404 }
       );
     }
 
     return NextResponse.json({ data: task });
   } catch (error) {
-    console.error("获取任务详情失败:", error);
+    console.error("Failed to fetch task:", error);
     return NextResponse.json(
-      { error: "获取任务详情失败" },
+      { error: "Failed to fetch task" },
       { status: 500 }
     );
   }
@@ -80,73 +59,38 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const {
-      title,
-      description,
-      assigneeRole,
-      assigneeName,
-      assignees,      // 新字段：更新负责人列表
-      deliverableType,
-      status,
-      priority,
-      plannedDate,
-      actualDate,
-    } = body;
+    const { title, status, priority, dueDate, reason } = body;
 
-    // 更新任务基本信息
-    await prisma.task.update({
+    // 获取当前任务信息用于日志
+    const existingTask = await prisma.task.findUnique({
       where: { id },
-      data: {
-        title,
-        description,
-        assigneeRole,
-        assigneeName,
-        deliverableType,
-        status,
-        priority,
-        plannedDate: plannedDate ? new Date(plannedDate) : null,
-        actualDate: actualDate ? new Date(actualDate) : null,
-      },
     });
 
-    // 如果提供了负责人列表，更新负责人
-    if (assignees !== undefined) {
-      // 删除现有的负责人关联
-      await prisma.taskAssignee.deleteMany({
-        where: { taskId: id },
-      });
-
-      // 创建新的负责人关联
-      for (const assignee of assignees) {
-        const user = await prisma.user.findUnique({
-          where: { userId: assignee.userId },
-        });
-
-        if (user) {
-          await prisma.taskAssignee.create({
-            data: {
-              taskId: id,
-              userId: user.id,
-              role: assignee.role || null,
-            },
-          });
-        }
-      }
+    if (!existingTask) {
+      return NextResponse.json(
+        { error: "Task not found" },
+        { status: 404 }
+      );
     }
 
-    // 返回更新后的任务（包含负责人信息）
-    const taskWithAssignees = await prisma.task.findUnique({
+    // 构建更新数据
+    const updateData: Record<string, unknown> = {};
+    if (title !== undefined) updateData.title = title;
+    if (status !== undefined) updateData.status = status;
+    if (priority !== undefined) updateData.priority = priority;
+    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
+
+    // 先更新任务
+    const updatedTask = await prisma.task.update({
       where: { id },
+      data: updateData,
       include: {
         assignees: {
           include: {
             user: {
               select: {
                 id: true,
-                userId: true,
                 userName: true,
-                avatar: true,
-                role: true,
               },
             },
           },
@@ -154,11 +98,30 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({ data: taskWithAssignees });
+    // 如果有状态变更，单独创建日志记录
+    if (status !== undefined && status !== existingTask.status) {
+      try {
+        await prisma.taskChangeLog.create({
+          data: {
+            taskId: id,
+            field: "状态",
+            oldValue: existingTask.status,
+            newValue: status,
+            reason: reason || "状态变更",
+            changedBy: "system",
+          },
+        });
+      } catch (logError) {
+        console.error("Failed to create change log:", logError);
+      }
+    }
+
+    return NextResponse.json({ data: updatedTask });
   } catch (error) {
-    console.error("更新任务失败:", error);
+    console.error("Failed to update task:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "更新任务失败" },
+      { error: "Failed to update task", details: errorMessage },
       { status: 500 }
     );
   }
@@ -172,15 +135,26 @@ export async function DELETE(
   try {
     const { id } = await params;
 
+    const existingTask = await prisma.task.findUnique({
+      where: { id },
+    });
+
+    if (!existingTask) {
+      return NextResponse.json(
+        { error: "Task not found" },
+        { status: 404 }
+      );
+    }
+
     await prisma.task.delete({
       where: { id },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("删除任务失败:", error);
+    console.error("Failed to delete task:", error);
     return NextResponse.json(
-      { error: "删除任务失败" },
+      { error: "Failed to delete task" },
       { status: 500 }
     );
   }
