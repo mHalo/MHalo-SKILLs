@@ -18,7 +18,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -56,6 +56,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("milestones");
 
   useEffect(() => {
     if (params.id) {
@@ -208,7 +209,7 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
-          {/* 成员和进度条 */}
+          {/* 成员 */}
           <div className="mt-4 pt-4 border-t border-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -237,20 +238,20 @@ export default function ProjectDetailPage() {
         </CardContent>
       </Card>
 
-      {/* 里程碑和任务 */}
-      <Tabs defaultValue="milestones" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 h-9">
-          <TabsTrigger value="milestones" className="text-xs">
-            <Target size={14} className="mr-1.5" />
+      {/* 使用 shadcn Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full grid grid-cols-2">
+          <TabsTrigger value="milestones" className="gap-2">
+            <Target size={16} />
             里程碑
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="text-xs">
-            <Flag size={14} className="mr-1.5" />
+          <TabsTrigger value="tasks" className="gap-2">
+            <Flag size={16} />
             任务
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="milestones" className="mt-3 space-y-3">
+        <TabsContent value="milestones" className="mt-4 space-y-3">
           {project.milestones?.length === 0 ? (
             <Card>
               <CardContent className="py-10 text-center">
@@ -342,7 +343,7 @@ export default function ProjectDetailPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="tasks" className="mt-3">
+        <TabsContent value="tasks" className="mt-4">
           <Card>
             <CardContent className="p-0">
               {project.milestones?.flatMap(m => m.tasks || []).length === 0 ? (
