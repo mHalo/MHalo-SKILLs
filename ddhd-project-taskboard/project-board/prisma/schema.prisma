@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 项目
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String   // 营销/活动/开发/内容制作
+  status      String   @default("进行中") // 进行中/已完成/暂停
+  client      String?  // 客户名称
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  milestones    Milestone[]
+  calendarEvents CalendarEvent[]
+  communications Communication[]
+
+  @@map("projects")
+}
+
+// 里程碑
+model Milestone {
+  id          String    @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  deadline    DateTime?
+  status      String    @default("待开始") // 待开始/进行中/已完成
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 关联
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@map("milestones")
+}
+
+// 任务
+model Task {
+  id              String    @id @default(cuid())
+  milestoneId     String
+  parentTaskId    String?   // 父任务ID（支持子任务链）
+  title           String
+  description     String?
+  assigneeRole    String?   // 角色：策划虾/创作虾/技术虾/运营虾
+  assigneeName    String?   // 具体执行人
+  deliverableType String?   // 输出物类型标签（自由填写）
+  status          String    @default("待开始") // 待开始/进行中/已完成/有风险/已延期/暂停
+  priority        String    @default("P1") // P0/P1/P2
+  plannedDate     DateTime? // 计划日期
+  actualDate      DateTime? // 实际完成日期
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // 关联
+  milestone    Milestone      @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  parentTask   Task?          @relation("TaskChain", fields: [parentTaskId], references: [id])
+  subTasks     Task[]         @relation("TaskChain")
+  changeLogs   TaskChangeLog[]
+  deliverables Deliverable[]
+
+  @@map("tasks")
+}
+
+// 任务变更日志
+model TaskChangeLog {
+  id        String   @id @default(cuid())
+  taskId    String
+  field     String   // 日期/负责人/状态/优先级
+  oldValue  String?
+  newValue  String?
+  reason    String   // 变更原因（必填）
+  changedBy String   // 操作人
+  changedAt DateTime @default(now())
+
+  // 关联
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_change_logs")
+}
+
+// 交付物
+model Deliverable {
+  id        String   @id @default(cuid())
+  taskId    String
+  name      String
+  type      String   // 文件类型
+  path      String   // 文件路径
+  createdAt DateTime @default(now())
+
+  // 关联
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("deliverables")
+}
+
+// 日历事件（拜访/会议/评审节点）
+model CalendarEvent {
+  id        String    @id @default(cuid())
+  projectId String
+  title     String    // 事件标题
+  eventType String    // 会议/拜访/评审/截止日
+  eventDate DateTime  // 事件日期时间
+  duration  Int?      // 持续时间（分钟）
+  attendees String?   // 参与人（逗号分隔）
+  reminder  Int?      // 提前提醒（分钟）
+  notes     String?   // 备注
+  createdAt DateTime  @default(now())
+
+  // 关联
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("calendar_events")
+}
+
+// 沟通记录
+model Communication {
+  id           String   @id @default(cuid())
+  projectId    String
+  type         String   // 电话/会议/邮件/微信
+  date         DateTime
+  participants String?  // 参与人员
+  summary      String   // 内容摘要
+  recordingPath String? // 录音/附件路径
+  actionItems  String?  // 触发的待办事项（JSON）
+  createdAt    DateTime @default(now())
+
+  // 关联
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("communications")
+}
