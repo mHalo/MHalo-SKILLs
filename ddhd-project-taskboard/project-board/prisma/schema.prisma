@@ -7,6 +7,43 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 用户/负责人
+model User {
+  id        String   @id @default(cuid())
+  userId    String   @unique // 用户唯一ID (如: 5314294e)
+  openId    String?  @unique // 第三方OpenID (如: ou_d16d474761c1bd2852b7d2f1aeafaadc)
+  userName  String   // 姓名
+  avatar    String?  // 头像URL
+  role      String   // 角色: 策划虾/创作虾/技术虾/运营虾/总指挥虾
+  email     String?  // 邮箱
+  phone     String?  // 电话
+  status    String   @default("active") // active/inactive
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联
+  assignedTasks TaskAssignee[] // 分配的任务
+  projects      ProjectMember[] // 参与的项目
+
+  @@map("users")
+}
+
+// 项目成员关系表
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String?  // 在项目中的角色（可覆盖用户默认角色）
+  joinedAt  DateTime @default(now())
+
+  // 关联
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
 // 项目
 model Project {
   id          String   @id @default(cuid())
@@ -21,9 +58,10 @@ model Project {
   updatedAt   DateTime @updatedAt
 
   // 关联
-  milestones    Milestone[]
+  milestones     Milestone[]
   calendarEvents CalendarEvent[]
   communications Communication[]
+  members        ProjectMember[] // 项目成员
 
   @@map("projects")
 }
@@ -54,8 +92,9 @@ model Task {
   parentTaskId    String?   // 父任务ID（支持子任务链）
   title           String
   description     String?
-  assigneeRole    String?   // 角色：策划虾/创作虾/技术虾/运营虾
-  assigneeName    String?   // 具体执行人
+  // 保留原有字段兼容
+  assigneeRole    String?   // 角色：策划虾/创作虾/技术虾/运营虾 (deprecated, 使用 assignees)
+  assigneeName    String?   // 具体执行人 (deprecated, 使用 assignees)
   deliverableType String?   // 输出物类型标签（自由填写）
   status          String    @default("待开始") // 待开始/进行中/已完成/有风险/已延期/暂停
   priority        String    @default("P1") // P0/P1/P2
@@ -70,8 +109,24 @@ model Task {
   subTasks     Task[]         @relation("TaskChain")
   changeLogs   TaskChangeLog[]
   deliverables Deliverable[]
+  assignees    TaskAssignee[] // 分配的负责人（新增）
 
   @@map("tasks")
+}
+
+// 任务负责人关联表
+model TaskAssignee {
+  id     String @id @default(cuid())
+  taskId String
+  userId String
+  role   String? // 在该任务中的角色（可选）
+
+  // 关联
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@map("task_assignees")
 }
 
 // 任务变更日志
@@ -82,7 +137,7 @@ model TaskChangeLog {
   oldValue  String?
   newValue  String?
   reason    String   // 变更原因（必填）
-  changedBy String   // 操作人
+  changedBy String   // 操作人（userId）
   changedAt DateTime @default(now())
 
   // 关联
@@ -114,7 +169,7 @@ model CalendarEvent {
   eventType String    // 会议/拜访/评审/截止日
   eventDate DateTime  // 事件日期时间
   duration  Int?      // 持续时间（分钟）
-  attendees String?   // 参与人（逗号分隔）
+  attendees String?   // 参与人（userId列表，逗号分隔）
   reminder  Int?      // 提前提醒（分钟）
   notes     String?   // 备注
   createdAt DateTime  @default(now())
@@ -131,7 +186,7 @@ model Communication {
   projectId    String
   type         String   // 电话/会议/邮件/微信
   date         DateTime
-  participants String?  // 参与人员
+  participants String?  // 参与人员（userId列表）
   summary      String   // 内容摘要
   recordingPath String? // 录音/附件路径
   actionItems  String?  // 触发的待办事项（JSON）

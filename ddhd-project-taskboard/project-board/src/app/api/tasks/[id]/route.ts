@@ -20,6 +20,33 @@ export async function GET(
         },
         subTasks: {
           orderBy: { createdAt: "asc" },
+          include: {
+            assignees: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    userId: true,
+                    userName: true,
+                    avatar: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        assignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                userId: true,
+                userName: true,
+                avatar: true,
+                role: true,
+              },
+            },
+          },
         },
         changeLogs: {
           orderBy: { changedAt: "desc" },
@@ -58,6 +85,7 @@ export async function PUT(
       description,
       assigneeRole,
       assigneeName,
+      assignees,      // 新字段：更新负责人列表
       deliverableType,
       status,
       priority,
@@ -65,6 +93,7 @@ export async function PUT(
       actualDate,
     } = body;
 
+    // 更新任务基本信息
     const task = await prisma.task.update({
       where: { id },
       data: {
@@ -80,7 +109,52 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({ data: task });
+    // 如果提供了负责人列表，更新负责人
+    if (assignees !== undefined) {
+      // 删除现有的负责人关联
+      await prisma.taskAssignee.deleteMany({
+        where: { taskId: id },
+      });
+
+      // 创建新的负责人关联
+      for (const assignee of assignees) {
+        const user = await prisma.user.findUnique({
+          where: { userId: assignee.userId },
+        });
+
+        if (user) {
+          await prisma.taskAssignee.create({
+            data: {
+              taskId: id,
+              userId: user.id,
+              role: assignee.role || null,
+            },
+          });
+        }
+      }
+    }
+
+    // 返回更新后的任务（包含负责人信息）
+    const taskWithAssignees = await prisma.task.findUnique({
+      where: { id },
+      include: {
+        assignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                userId: true,
+                userName: true,
+                avatar: true,
+                role: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ data: taskWithAssignees });
   } catch (error) {
     console.error("更新任务失败:", error);
     return NextResponse.json(

@@ -9,10 +9,23 @@ export async function GET(
   try {
     const { id: milestoneId } = await params;
 
-    // 获取所有任务
+    // 获取所有任务（包含负责人信息）
     const allTasks = await prisma.task.findMany({
       where: { milestoneId },
       include: {
+        assignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                userId: true,
+                userName: true,
+                avatar: true,
+                role: true,
+              },
+            },
+          },
+        },
         _count: {
           select: { subTasks: true },
         },
@@ -63,14 +76,16 @@ export async function POST(
     const {
       title,
       description,
-      assigneeRole,
-      assigneeName,
+      assigneeRole,   // 兼容旧字段
+      assigneeName,   // 兼容旧字段
+      assignees,      // 新字段：负责人列表 [{userId, role}]
       deliverableType,
       priority,
       plannedDate,
       parentTaskId,
     } = body;
 
+    // 创建任务
     const task = await prisma.task.create({
       data: {
         milestoneId,
@@ -85,7 +100,47 @@ export async function POST(
       },
     });
 
-    return NextResponse.json({ data: task }, { status: 201 });
+    // 如果有指定负责人，创建关联
+    if (assignees && assignees.length > 0) {
+      for (const assignee of assignees) {
+        // 通过 userId 查找用户
+        const user = await prisma.user.findUnique({
+          where: { userId: assignee.userId },
+        });
+        
+        if (user) {
+          await prisma.taskAssignee.create({
+            data: {
+              taskId: task.id,
+              userId: user.id,
+              role: assignee.role || null,
+            },
+          });
+        }
+      }
+    }
+
+    // 返回包含负责人信息的任务
+    const taskWithAssignees = await prisma.task.findUnique({
+      where: { id: task.id },
+      include: {
+        assignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                userId: true,
+                userName: true,
+                avatar: true,
+                role: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ data: taskWithAssignees }, { status: 201 });
   } catch (error) {
     console.error("创建任务失败:", error);
     return NextResponse.json(

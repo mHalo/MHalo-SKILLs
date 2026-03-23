@@ -12,12 +12,38 @@ export async function GET(
     const project = await prisma.project.findUnique({
       where: { id },
       include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                userId: true,
+                userName: true,
+                avatar: true,
+                role: true,
+              },
+            },
+          },
+        },
         milestones: {
           orderBy: { order: "asc" },
           include: {
             tasks: {
               orderBy: { createdAt: "asc" },
               include: {
+                assignees: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        userId: true,
+                        userName: true,
+                        avatar: true,
+                        role: true,
+                      },
+                    },
+                  },
+                },
                 changeLogs: {
                   orderBy: { changedAt: "desc" },
                   take: 5,
@@ -25,9 +51,18 @@ export async function GET(
                 subTasks: {
                   orderBy: { createdAt: "asc" },
                   include: {
-                    changeLogs: {
-                      orderBy: { changedAt: "desc" },
-                      take: 3,
+                    assignees: {
+                      include: {
+                        user: {
+                          select: {
+                            id: true,
+                            userId: true,
+                            userName: true,
+                            avatar: true,
+                            role: true,
+                          },
+                        },
+                      },
                     },
                   },
                 },
@@ -70,6 +105,21 @@ export async function GET(
       (t: any) => t.status === "进行中"
     ).length;
 
+    // 提取所有参与项目的用户
+    const memberMap = new Map();
+    project.members.forEach((m: any) => {
+      memberMap.set(m.user.id, m.user);
+    });
+    // 从任务中提取负责人
+    [...allTasks, ...allSubTasks].forEach((t: any) => {
+      t.assignees?.forEach((a: any) => {
+        if (a.user) {
+          memberMap.set(a.user.id, a.user);
+        }
+      });
+    });
+    const allMembers = Array.from(memberMap.values());
+
     const snapshot = {
       project: {
         id: project.id,
@@ -89,7 +139,9 @@ export async function GET(
         completedTasks,
         inProgressTasks,
         completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+        memberCount: allMembers.length,
       },
+      members: allMembers,
       milestones: project.milestones.map((milestone: any) => ({
         id: milestone.id,
         name: milestone.name,
@@ -101,6 +153,14 @@ export async function GET(
           id: task.id,
           title: task.title,
           description: task.description,
+          assignees: task.assignees.map((a: any) => ({
+            userId: a.user.userId,
+            userName: a.user.userName,
+            avatar: a.user.avatar,
+            role: a.user.role,
+            taskRole: a.role,
+          })),
+          // 兼容旧字段
           assigneeRole: task.assigneeRole,
           assigneeName: task.assigneeName,
           deliverableType: task.deliverableType,
@@ -112,12 +172,15 @@ export async function GET(
           subTasks: task.subTasks?.map((sub: any) => ({
             id: sub.id,
             title: sub.title,
-            assigneeRole: sub.assigneeRole,
-            assigneeName: sub.assigneeName,
+            assignees: sub.assignees.map((a: any) => ({
+              userId: a.user.userId,
+              userName: a.user.userName,
+              avatar: a.user.avatar,
+              role: a.user.role,
+            })),
             status: sub.status,
             priority: sub.priority,
             plannedDate: sub.plannedDate,
-            changeLogs: sub.changeLogs,
           })),
           deliverables: task.deliverables,
         })),
