@@ -271,7 +271,7 @@ export default function PeoplePage() {
 
                 {/* 近3条待推进任务 */}
                 {stats.incompleteTasks.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         待推进任务（近{Math.min(stats.incompleteTasks.length, 3)}条）
@@ -296,7 +296,7 @@ export default function PeoplePage() {
                         </Button>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {(isExpanded
                         ? stats.incompleteTasks
                         : stats.incompleteTasks.slice(0, 3)
@@ -305,7 +305,7 @@ export default function PeoplePage() {
                           key={task.id}
                           href={`/projects/${task.milestone.project.id}`}
                         >
-                          <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group">
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group">
                             {getStatusIcon(task.status)}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
