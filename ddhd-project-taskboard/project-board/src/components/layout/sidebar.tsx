@@ -64,17 +64,6 @@ export function Sidebar({ className }: SidebarProps) {
         </Link>
       </div>
 
-      {/* 新建项目按钮 */}
-      <div className="p-3">
-        <Link href="/projects/new" className="block">
-          <Button
-            className="w-full h-10 bg-brand-primary hover:opacity-90 text-white font-medium rounded-lg gap-0 shadow-soft transition-all"
-          >
-            <Plus size={20} strokeWidth={1.5} />
-          </Button>
-        </Link>
-      </div>
-
       {/* 主菜单 - 上下居中对齐 */}
       <nav className="flex-1 flex flex-col items-center justify-center gap-1 px-2">
         {mainMenuItems.map((item) => {
@@ -98,6 +87,17 @@ export function Sidebar({ className }: SidebarProps) {
           );
         })}
       </nav>
+
+      {/* 新建项目按钮 - 放在最底部 */}
+      <div className="p-3 border-t border-brand-border">
+        <Link href="/projects/new" className="block">
+          <Button
+            className="w-full h-10 bg-brand-primary hover:opacity-90 text-white font-medium rounded-lg gap-0 shadow-soft transition-all"
+          >
+            <Plus size={20} strokeWidth={1.5} />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }
