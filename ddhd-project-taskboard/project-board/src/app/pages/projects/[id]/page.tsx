@@ -239,7 +239,7 @@ export default function ProjectDetailPage() {
       </Card>
 
       {/* 使用 shadcn Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col">
         <TabsList className="w-full grid grid-cols-2">
           <TabsTrigger value="milestones" className="gap-2">
             <Target size={16} />
@@ -251,7 +251,7 @@ export default function ProjectDetailPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="milestones" className="mt-4 space-y-3">
+        <TabsContent value="milestones" className="mt-4 space-y-3 w-full block">
           {project.milestones?.length === 0 ? (
             <Card>
               <CardContent className="py-10 text-center">
@@ -343,7 +343,7 @@ export default function ProjectDetailPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="tasks" className="mt-4">
+        <TabsContent value="tasks" className="mt-4 w-full block">
           <Card>
             <CardContent className="p-0">
               {project.milestones?.flatMap(m => m.tasks || []).length === 0 ? (
