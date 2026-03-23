@@ -251,15 +251,15 @@ export default function DashboardPage() {
                             {project.client || "无客户"}
                           </p>
                           
-                          {/* 统计信息 - 移动到右侧 */}
+                          {/* 统计信息 - 里程碑在前，任务在后 */}
                           <div className="flex items-center gap-4 text-xs text-brand-secondary">
-                            <span className="flex items-center gap-1">
-                              <Calendar size={14} strokeWidth={1.5} />
-                              {project.taskCount} 任务
-                            </span>
                             <span className="flex items-center gap-1">
                               <CheckCircle2 size={14} strokeWidth={1.5} />
                               {project.milestoneCount} 里程碑
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar size={14} strokeWidth={1.5} />
+                              {project.taskCount} 任务
                             </span>
                           </div>
                         </div>
