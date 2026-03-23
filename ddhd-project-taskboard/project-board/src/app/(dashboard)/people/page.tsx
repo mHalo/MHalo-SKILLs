@@ -1,38 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Users, CheckCircle2, Clock, AlertCircle, FolderOpen } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Users, Briefcase, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 interface User {
-  id: string;
   userId: string;
   userName: string;
-  avatar: string | null;
+  avatar?: string;
   role: string;
+  _count?: {
+    assignees: number;
+  };
 }
 
-interface UserWithTasks extends User {
-  stats: {
-    totalTasks: number;
-    completedTasks: number;
-    inProgressTasks: number;
-    atRiskTasks: number;
-  };
-  projects: {
-    id: string;
-    name: string;
-    status: string;
+interface Task {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  project: { name: string };
+  milestone: { name: string };
+}
+
+interface UserDetail extends User {
+  assignees: {
+    task: Task;
+    role: string;
   }[];
 }
 
 export default function PeoplePage() {
-  const [users, setUsers] = useState<UserWithTasks[]>([]);
+  const [users, setUsers] = useState<UserDetail[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,26 +43,14 @@ export default function PeoplePage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // 获取所有用户
-      const usersRes = await fetch("/api/users");
-      const usersData = await usersRes.json();
-      
-      if (usersData.data) {
-        // 获取每个用户的项目和任务详情
+      const res = await fetch("/api/users");
+      const data = await res.json();
+      if (data.data) {
         const usersWithDetails = await Promise.all(
-          usersData.data.map(async (user: User) => {
-            const projectsRes = await fetch(`/api/users/${user.userId}/projects`);
-            const projectsData = await projectsRes.json();
-            return {
-              ...user,
-              stats: projectsData.data?.stats || {
-                totalTasks: 0,
-                completedTasks: 0,
-                inProgressTasks: 0,
-                atRiskTasks: 0,
-              },
-              projects: projectsData.data?.projects || [],
-            };
+          data.data.map(async (u: User) => {
+            const detailRes = await fetch(`/api/users/${u.userId}`);
+            const detailData = await detailRes.json();
+            return { ...u, ...detailData.data };
           })
         );
         setUsers(usersWithDetails);
@@ -73,24 +62,35 @@ export default function PeoplePage() {
     }
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "总指挥虾": return "bg-purple-100 text-purple-800";
-      case "策划虾": return "bg-blue-100 text-blue-800";
-      case "创作虾": return "bg-pink-100 text-pink-800";
-      case "技术虾": return "bg-green-100 text-green-800";
-      case "运营虾": return "bg-orange-100 text-orange-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
+  const getTaskStats = (user: UserDetail) => {
+    const assignees = user.assignees || [];
+    const pending = assignees.filter(a => a.task.status === "待开始").length;
+    const inProgress = assignees.filter(a => a.task.status === "进行中").length;
+    const completed = assignees.filter(a => a.task.status === "已完成").length;
+    const highPriority = assignees.filter(a => ["高", "紧急"].includes(a.task.priority)).length;
+
+    return { pending, inProgress, completed, highPriority, total: assignees.length };
+  };
+
+  const getRoleStyle = (role: string) => {
+    if (role.includes("指挥")) return "bg-brand-primary/10 text-brand-primary";
+    if (role.includes("技术")) return "bg-brand-info/10 text-brand-info";
+    if (role.includes("创作") || role.includes("策划")) return "bg-brand-success/10 text-brand-success";
+    if (role.includes("运营")) return "bg-brand-warning/10 text-brand-warning";
+    return "bg-brand-main text-brand-secondary";
+  };
+
+  const getInitials = (name: string) => {
+    return name.slice(0, 2);
   };
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-64" />
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-40" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-48 rounded-xl" />
           ))}
         </div>
       </div>
@@ -99,104 +99,92 @@ export default function PeoplePage() {
 
   return (
     <div className="space-y-6">
-      {/* 页面标题 */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">人员看板</h1>
-        <p className="text-gray-500 mt-1">按责任人查看任务分配及执行情况</p>
+      {/* 页面标题 - Soft Tech Style */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-page-title text-brand-primary">人员看板</h1>
+          <p className="text-description mt-1">查看团队成员的任务分配情况</p>
+        </div>
       </div>
 
       {/* 人员卡片网格 */}
-      {users.length === 0 ? (
-        <Card className="text-center py-16">
-          <CardContent>
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Users className="w-10 h-10 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">暂无人员</h3>
-            <p className="text-gray-500">请先添加负责人</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {users.map((user) => (
-            <Card key={user.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={user.avatar || undefined} />
-                      <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
-                        {user.userName?.charAt(0) || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <CardTitle className="text-lg">{user.userName}</CardTitle>
-                      <Badge className={getRoleColor(user.role)}>
-                        {user.role}
-                      </Badge>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {users.map((user) => {
+          const stats = getTaskStats(user);
+          
+          return (
+            <Card key={user.userId} className="layout-card hover:shadow-card transition-all">
+              <CardContent className="p-4">
+                {/* 头像和基本信息 */}
+                <div className="flex items-start gap-3 mb-3">
+                  {user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.userName}
+                      className="w-12 h-12 rounded-xl object-cover bg-brand-main"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-brand-primary flex items-center justify-center text-white font-semibold text-sm">
+                      {getInitials(user.userName)}
                     </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-brand-primary">{user.userName}</h3>
+                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mt-0.5 ${getRoleStyle(user.role)}`}>
+                      {user.role}
+                    </span>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {/* 任务统计 */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-blue-50 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {user.stats.totalTasks}
-                    </div>
-                    <div className="text-xs text-blue-600">总任务</div>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {user.stats.completedTasks}
-                    </div>
-                    <div className="text-xs text-green-600">已完成</div>
-                  </div>
-                  <div className="bg-yellow-50 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {user.stats.inProgressTasks}
-                    </div>
-                    <div className="text-xs text-yellow-600">进行中</div>
-                  </div>
-                  <div className="bg-red-50 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-red-600">
-                      {user.stats.atRiskTasks}
-                    </div>
-                    <div className="text-xs text-red-600">有风险</div>
+                  <div className="text-right">
+                    <span className="text-2xl font-bold text-brand-primary">{stats.total}</span>
+                    <p className="text-xs text-brand-secondary">任务总数</p>
                   </div>
                 </div>
 
-                {/* 参与的项目 */}
-                <div className="border-t pt-3">
-                  <div className="text-sm text-gray-500 mb-2">参与项目</div>
-                  <div className="space-y-1">
-                    {user.projects.length === 0 ? (
-                      <span className="text-sm text-gray-400">暂无项目</span>
-                    ) : (
-                      user.projects.slice(0, 3).map(project => (
-                        <Link 
-                          key={project.id} 
-                          href={`/projects/${project.id}`}
-                          className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
-                        >
-                          <FolderOpen className="w-4 h-4" />
-                          {project.name}
-                        </Link>
-                      ))
-                    )}
-                    {user.projects.length > 3 && (
-                      <span className="text-xs text-gray-400">
-                        +{user.projects.length - 3} 更多
-                      </span>
-                    )}
+                {/* 任务统计 - Soft Tech Style */}
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  <div className="text-center p-1.5 bg-brand-main rounded">
+                    <Clock size={14} strokeWidth={1.5} className="text-brand-secondary mx-auto mb-0.5" />
+                    <span className="text-sm font-semibold text-brand-primary">{stats.pending}</span>
+                    <p className="text-xs text-brand-secondary">待开始</p>
+                  </div>
+                  <div className="text-center p-1.5 bg-brand-info/10 rounded">
+                    <Briefcase size={14} strokeWidth={1.5} className="text-brand-info mx-auto mb-0.5" />
+                    <span className="text-sm font-semibold text-brand-info">{stats.inProgress}</span>
+                    <p className="text-xs text-brand-secondary">进行中</p>
+                  </div>
+                  <div className="text-center p-1.5 bg-brand-success/10 rounded">
+                    <CheckCircle2 size={14} strokeWidth={1.5} className="text-brand-success mx-auto mb-0.5" />
+                    <span className="text-sm font-semibold text-brand-success">{stats.completed}</span>
+                    <p className="text-xs text-brand-secondary">已完成</p>
+                  </div>
+                  <div className="text-center p-1.5 bg-brand-warning/10 rounded">
+                    <AlertCircle size={14} strokeWidth={1.5} className="text-brand-warning mx-auto mb-0.5" />
+                    <span className="text-sm font-semibold text-brand-warning">{stats.highPriority}</span>
+                    <p className="text-xs text-brand-secondary">高优先级</p>
                   </div>
                 </div>
+
+                {/* 最近任务预览 */}
+                {user.assignees && user.assignees.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-brand-secondary uppercase tracking-wide">最近任务</p>
+                    {user.assignees.slice(0, 2).map(({ task }) => (
+                      <div key={task.id} className="flex items-center gap-2 text-xs">
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          task.status === "已完成" ? "bg-brand-success" :
+                          task.status === "进行中" ? "bg-brand-info" : "bg-brand-secondary"
+                        }`} />
+                        <span className="text-brand-secondary truncate flex-1">{task.title}</span>
+                        <span className="text-brand-secondary/60">{task.project.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }

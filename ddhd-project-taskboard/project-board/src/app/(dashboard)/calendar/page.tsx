@@ -1,181 +1,214 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from "date-fns";
-import { zhCN } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, CalendarDays, Clock } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin, User, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface CalendarEvent {
   id: string;
   title: string;
-  eventType: string;
-  eventDate: string;
-  duration: number | null;
-  project: {
-    id: string;
-    name: string;
-  };
+  type: string;
+  date: string;
+  time?: string;
+  location?: string;
+  description?: string;
+  project?: { name: string };
 }
 
 export default function CalendarPage() {
-  const [currentWeek, setCurrentWeek] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // 获取本周的日期范围
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // 周一开始
-  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
     fetchEvents();
-  }, [currentWeek]);
+  }, []);
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const start = format(weekStart, "yyyy-MM-dd");
-      const end = format(weekEnd, "yyyy-MM-dd");
-      const res = await fetch(`/api/calendar?start=${start}&end=${end}`);
+      const res = await fetch("/api/calendar?upcoming=true&limit=30");
       const data = await res.json();
       if (data.data) {
         setEvents(data.data);
       }
     } catch (error) {
-      toast.error("获取日历数据失败");
+      toast.error("获取日历事件失败");
     } finally {
       setLoading(false);
     }
   };
 
-  const getEventsForDay = (date: Date) => {
-    return events.filter(event => {
-      const eventDate = new Date(event.eventDate);
-      return isSameDay(eventDate, date);
-    }).sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+  // 按日期分组事件
+  const groupedEvents = events.reduce((acc, event) => {
+    const date = event.date;
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(event);
+    return acc;
+  }, {} as Record<string, CalendarEvent[]>);
+
+  const sortedDates = Object.keys(groupedEvents).sort();
+
+  const formatDate = (dateStr: string) => {
+    // 处理只有日期部分的情况 (YYYY-MM-DD)
+    const date = new Date(dateStr + (dateStr.includes('T') ? '' : 'T00:00:00'));
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) return "今天";
+    if (date.toDateString() === tomorrow.toDateString()) return "明天";
+
+    return new Intl.DateTimeFormat("zh-CN", { 
+      month: "long", 
+      day: "numeric",
+      weekday: "short"
+    }).format(date);
   };
 
-  const getEventTypeColor = (type: string) => {
+  const getEventIcon = (type: string) => {
     switch (type) {
-      case "会议": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "拜访": return "bg-green-100 text-green-800 border-green-200";
-      case "截止日": return "bg-red-100 text-red-800 border-red-200";
-      case "评审": return "bg-purple-100 text-purple-800 border-purple-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
+      case "会议": return <div className="w-8 h-8 bg-brand-info/10 rounded-md flex items-center justify-center"><Clock size={16} strokeWidth={1.5} className="text-brand-info" /></div>;
+      case "交付": return <div className="w-8 h-8 bg-brand-success/10 rounded-md flex items-center justify-center"><CheckCircle2 size={16} strokeWidth={1.5} className="text-brand-success" /></div>;
+      case "截止": return <div className="w-8 h-8 bg-brand-warning/10 rounded-md flex items-center justify-center"><AlertCircle size={16} strokeWidth={1.5} className="text-brand-warning" /></div>;
+      default: return <div className="w-8 h-8 bg-brand-main rounded-md flex items-center justify-center"><Calendar size={16} strokeWidth={1.5} className="text-brand-secondary" /></div>;
     }
   };
 
-  const prevWeek = () => setCurrentWeek(subWeeks(currentWeek, 1));
-  const nextWeek = () => setCurrentWeek(addWeeks(currentWeek, 1));
-  const goToToday = () => setCurrentWeek(new Date());
+  const getEventBorderColor = (type: string) => {
+    switch (type) {
+      case "会议": return "border-l-brand-info";
+      case "交付": return "border-l-brand-success";
+      case "截止": return "border-l-brand-warning";
+      default: return "border-l-brand-secondary";
+    }
+  };
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-[600px]" />
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-12 w-full max-w-md" />
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-32 rounded-xl" />
+        ))}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* 页面标题 */}
+      {/* 页面标题 - Soft Tech Style */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">日历看板</h1>
-          <p className="text-gray-500 mt-1">本周项目任务时间轴及节点安排</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={prevWeek}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={goToToday}>
-            本周
-          </Button>
-          <Button variant="outline" size="sm" onClick={nextWeek}>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+          <h1 className="text-page-title text-brand-primary">日历看板</h1>
+          <p className="text-description mt-1">查看所有项目的时间安排和里程碑</p>
         </div>
       </div>
 
-      {/* 周标题 */}
-      <div className="text-center">
-        <h2 className="text-lg font-semibold text-gray-900">
-          {format(weekStart, "yyyy年MM月dd日", { locale: zhCN })} - {format(weekEnd, "MM月dd日", { locale: zhCN })}
-        </h2>
-      </div>
+      {/* 月份导航 */}
+      <Card className="layout-card">
+        <CardContent className="p-4 flex items-center justify-between">
+          <Button variant="ghost" size="icon" className="rounded-md hover:bg-brand-main">
+            <ChevronLeft size={20} strokeWidth={1.5} className="text-brand-secondary" />
+          </Button>
+          <span className="text-lg font-semibold text-brand-primary">
+            {new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "long" }).format(currentDate)}
+          </span>
+          <Button variant="ghost" size="icon" className="rounded-md hover:bg-brand-main">
+            <ChevronRight size={20} strokeWidth={1.5} className="text-brand-secondary" />
+          </Button>
+        </CardContent>
+      </Card>
 
-      {/* 周日历 */}
-      <div className="grid grid-cols-7 gap-4">
-        {weekDays.map((day, index) => {
-          const dayEvents = getEventsForDay(day);
-          const isToday = isSameDay(day, new Date());
-          
-          return (
-            <div key={index} className="min-h-[200px]">
-              {/* 日期头部 */}
-              <div className={`text-center p-3 rounded-t-lg ${
-                isToday ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
-              }`}>
-                <div className="text-sm font-medium">
-                  {format(day, "EEE", { locale: zhCN })}
-                </div>
-                <div className={`text-2xl font-bold ${isToday ? "text-white" : "text-gray-900"}`}>
-                  {format(day, "d")}
-                </div>
+      {/* 事件列表 */}
+      <div className="space-y-4">
+        {sortedDates.length === 0 ? (
+          <Card className="layout-card">
+            <CardContent className="text-center py-12">
+              <div className="w-16 h-16 bg-brand-main rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Calendar size={28} strokeWidth={1.5} className="text-brand-secondary" />
               </div>
-              
-              {/* 事件列表 */}
-              <div className="border border-t-0 rounded-b-lg p-2 space-y-2 min-h-[150px] bg-white">
-                {dayEvents.length === 0 ? (
-                  <div className="text-center text-gray-300 text-xs py-8">
-                    无安排
-                  </div>
-                ) : (
-                  dayEvents.map(event => (
-                    <div
-                      key={event.id}
-                      className="p-2 rounded border text-xs hover:shadow-md transition-shadow cursor-pointer"
-                    >
-                      <div className="flex items-center gap-1 mb-1">
-                        <Badge variant="outline" className={`text-[10px] px-1 py-0 ${getEventTypeColor(event.eventType)}`}>
-                          {event.eventType}
-                        </Badge>
+              <h3 className="text-lg font-semibold text-brand-primary mb-1">暂无事件</h3>
+              <p className="text-brand-secondary text-sm">当前没有即将发生的项目事件</p>
+            </CardContent>
+          </Card>
+        ) : (
+          sortedDates.map((date) => {
+            const dateObj = new Date(date + (date.includes('T') ? '' : 'T00:00:00'));
+            const dayNumber = isNaN(dateObj.getTime()) ? '--' : dateObj.getDate();
+            
+            return (
+            <div key={date} className="space-y-3">
+              {/* 日期标题 */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-brand-main rounded-xl flex items-center justify-center">
+                  <span className="text-sm font-bold text-brand-primary">
+                    {dayNumber}
+                  </span>
+                </div>
+                <h3 className="text-lg font-semibold text-brand-primary">{formatDate(date)}</h3>
+              </div>
+
+              {/* 事件卡片 */}
+              <div className="grid gap-3 pl-14">
+                {groupedEvents[date].map((event) => (
+                  <Card 
+                    key={event.id} 
+                    className={cn(
+                      "layout-card border-l-4 hover:shadow-card transition-shadow",
+                      getEventBorderColor(event.type)
+                    )}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-start gap-3">
+                        {getEventIcon(event.type)}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h4 className="font-semibold text-brand-primary text-sm">{event.title}</h4>
+                            <span className="px-1.5 py-0.5 bg-brand-main text-brand-secondary text-xs rounded">
+                              {event.type}
+                            </span>
+                          </div>
+                          {event.description && (
+                            <p className="text-brand-secondary text-xs mb-1.5">{event.description}</p>
+                          )}
+                          <div className="flex items-center gap-3 text-xs text-brand-secondary">
+                            {event.time && (
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} strokeWidth={1.5} />
+                                {event.time}
+                              </span>
+                            )}
+                            {event.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin size={12} strokeWidth={1.5} />
+                                {event.location}
+                              </span>
+                            )}
+                            {event.project && (
+                              <span className="flex items-center gap-1">
+                                <User size={12} strokeWidth={1.5} />
+                                {event.project.name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="font-medium text-gray-900 truncate">
-                        {event.title}
-                      </div>
-                      <div className="text-gray-500 mt-1">
-                        {format(new Date(event.eventDate), "HH:mm")}
-                        {event.duration && ` (${event.duration}分钟)`}
-                      </div>
-                      <div className="text-blue-600 mt-1 truncate">
-                        {event.project?.name}
-                      </div>
-                    </div>
-                  ))
-                )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           );
-        })}
-      </div>
-
-      {/* 图例 */}
-      <div className="flex items-center gap-4 text-sm text-gray-500">
-        <span>图例:</span>
-        <div className="flex items-center gap-2">
-          <Badge className="bg-blue-100 text-blue-800">会议</Badge>
-          <Badge className="bg-green-100 text-green-800">拜访</Badge>
-          <Badge className="bg-red-100 text-red-800">截止日</Badge>
-          <Badge className="bg-purple-100 text-purple-800">评审</Badge>
-        </div>
+        })
+        )}
       </div>
     </div>
   );
