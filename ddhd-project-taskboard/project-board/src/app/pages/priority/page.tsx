@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 
 interface Task {
   id: string;

@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 
 interface Project {
   id: string;
@@ -392,13 +393,22 @@ export default function ProjectDetailPage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">成员</span>
                 <div className="flex -space-x-1.5">
-                  {project.members?.slice(0, 4).map((member, i) => (
-                    <Avatar key={i} className="w-7 h-7 border-2 border-background">
-                      <AvatarFallback className="text-[10px] bg-muted">
-                        {member.user.userName.slice(0, 1)}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
+                  {project.members?.slice(0, 4).map((member, i) => {
+                    const color = getAvatarColor(member.user.userName);
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          "w-7 h-7 rounded-full border-2 border-background flex items-center justify-center text-[10px]",
+                          color.bg,
+                          color.text
+                        )}
+                        title={member.user.userName}
+                      >
+                        {getInitials(member.user.userName, 1)}
+                      </div>
+                    );
+                  })}
                   {(project.members?.length || 0) > 4 && (
                     <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] text-muted-foreground">
                       +{project.members!.length - 4}
@@ -600,13 +610,22 @@ export default function ProjectDetailPage() {
                           
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="flex -space-x-1">
-                              {task.assignees?.slice(0, 2).map((a, i) => (
-                                <Avatar key={i} className="w-6 h-6 border border-background">
-                                  <AvatarFallback className="text-[10px] bg-muted">
-                                    {a.user.userName.slice(0, 1)}
-                                  </AvatarFallback>
-                                </Avatar>
-                              ))}
+                              {task.assignees?.slice(0, 2).map((a, i) => {
+                                const color = getAvatarColor(a.user.userName);
+                                return (
+                                  <div
+                                    key={i}
+                                    className={cn(
+                                      "w-6 h-6 rounded-full border border-background flex items-center justify-center text-[10px]",
+                                      color.bg,
+                                      color.text
+                                    )}
+                                    title={a.user.userName}
+                                  >
+                                    {getInitials(a.user.userName, 1)}
+                                  </div>
+                                );
+                              })}
                               {task.assignees?.length === 0 && (
                                 <div className="w-6 h-6 rounded-full border border-dashed border-muted-foreground/50 flex items-center justify-center">
                                   <span className="text-[10px] text-muted-foreground">?</span>

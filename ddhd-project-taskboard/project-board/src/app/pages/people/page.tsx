@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 
 interface User {
   userId: string;
@@ -123,9 +124,7 @@ export default function PeoplePage() {
     return "bg-muted text-muted-foreground border-border";
   };
 
-  const getInitials = (name: string) => {
-    return name.slice(0, 2);
-  };
+
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -214,9 +213,14 @@ export default function PeoplePage() {
                       height={56}
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center text-white font-semibold text-lg">
-                      {getInitials(user.userName)}
-                    </div>
+                    (() => {
+                      const color = getAvatarColor(user.userId);
+                      return (
+                        <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center font-semibold text-lg", color.bg, color.text)}>
+                          {getInitials(user.userName)}
+                        </div>
+                      );
+                    })()
                   )}
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-semibold">{user.userName}</h3>
