@@ -58,7 +58,7 @@ export function Sidebar({ className }: SidebarProps) {
     >
       {/* Logo区域 */}
       <div className="p-6">
-        <Link href="/dashboard" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center">
             <span className="text-white font-bold text-lg">D</span>
           </div>
