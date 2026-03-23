@@ -20,7 +20,14 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
       include: {
         milestone: {
-          select: { id: true, name: true, projectId: true },
+          select: { 
+            id: true, 
+            name: true, 
+            projectId: true,
+            project: {
+              select: { id: true, name: true }
+            }
+          },
         },
         assignees: {
           include: {

@@ -1,10 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock, AlertCircle, Flag, ArrowUpRight } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Flag,
+  ArrowUpRight,
+  Briefcase,
+  User,
+  Calendar,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 interface Task {
@@ -13,10 +24,13 @@ interface Task {
   description?: string;
   priority: string;
   status: string;
-  daysUntilDeadline?: number;
-  project: { id: string; name: string };
-  milestone: { id: string; name: string };
-  assignees: { user: { userName: string; avatar?: string } }[];
+  plannedDate?: string;
+  milestone?: { 
+    id: string;
+    name: string; 
+    project: { id: string; name: string } 
+  };
+  assignees?: { user: { userName: string; avatar?: string } }[];
 }
 
 export default function PriorityPage() {
@@ -30,18 +44,15 @@ export default function PriorityPage() {
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/tasks?limit=100");
+      // 获取未完成的任务
+      const res = await fetch("/api/tasks?limit=200");
       const data = await res.json();
       if (data.data) {
-        // 获取所有任务详情
-        const tasksWithDetails = await Promise.all(
-          data.data.map(async (t: Task) => {
-            const detailRes = await fetch(`/api/tasks/${t.id}`);
-            const detailData = await detailRes.json();
-            return { ...t, ...detailData.data };
-          })
+        // 过滤掉已完成的任务
+        const incompleteTasks = data.data.filter(
+          (t: Task) => t.status !== "已完成"
         );
-        setTasks(tasksWithDetails);
+        setTasks(incompleteTasks);
       }
     } catch {
       toast.error("获取任务数据失败");
@@ -50,72 +61,112 @@ export default function PriorityPage() {
     }
   };
 
-  // 四象限分类
-  const urgentImportant = tasks.filter(t => ["紧急", "高"].includes(t.priority) && t.status !== "已完成");
-  const importantNotUrgent = tasks.filter(t => t.priority === "中" && t.status !== "已完成");
-  const urgentNotImportant = tasks.filter(t => ["紧急", "高"].includes(t.priority) && t.status === "已完成");
-  const neither = tasks.filter(t => t.priority === "低" && t.status !== "已完成");
+  // 四象限分类（基于 P0/P1/P2 优先级系统）
+  // P0 = 紧急重要, P1 = 重要不紧急, P2 = 不重要
+  const urgentImportant = tasks.filter((t) => t.priority === "P0");
+  const importantNotUrgent = tasks.filter((t) => t.priority === "P1");
+  const urgentNotImportant = tasks.filter((t) => t.priority === "P2" && t.status === "有风险");
+  const neither = tasks.filter((t) => t.priority === "P2" && t.status !== "有风险");
 
   const getPriorityStyle = (priority: string) => {
     switch (priority) {
-      case "紧急": return "bg-brand-warning/10 text-brand-warning";
-      case "高": return "bg-brand-warning/10 text-brand-warning";
-      case "中": return "bg-brand-info/10 text-brand-info";
-      case "低": return "bg-brand-main text-brand-secondary";
-      default: return "bg-brand-main text-brand-secondary";
+      case "P0":
+        return "bg-red-100 text-red-700 border-red-200";
+      case "P1":
+        return "bg-amber-100 text-amber-700 border-amber-200";
+      case "P2":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const getPriorityLabel = (priority: string) => {
+    switch (priority) {
+      case "P0":
+        return "紧急";
+      case "P1":
+        return "高";
+      case "P2":
+        return "中";
+      default:
+        return "低";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "已完成": return <CheckCircle2 size={16} strokeWidth={1.5} className="text-brand-success" />;
-      case "进行中": return <Clock size={16} strokeWidth={1.5} className="text-brand-info" />;
-      case "有风险": return <AlertCircle size={16} strokeWidth={1.5} className="text-brand-warning" />;
-      case "已延期": return <AlertTriangle size={16} strokeWidth={1.5} className="text-brand-warning" />;
-      default: return <div className="w-2 h-2 bg-brand-secondary rounded-full" />;
+      case "已完成":
+        return <CheckCircle2 size={16} className="text-green-500" />;
+      case "进行中":
+        return <Clock size={16} className="text-blue-500" />;
+      case "有风险":
+        return <AlertCircle size={16} className="text-amber-500" />;
+      case "已延期":
+        return <AlertTriangle size={16} className="text-red-500" />;
+      default:
+        return <div className="w-2 h-2 bg-gray-400 rounded-full" />;
     }
   };
 
   const TaskCard = ({ task }: { task: Task }) => (
-    <Link href={`/projects/${task.project.id}/milestones/${task.milestone.id}/tasks/${task.id}`}>
-      <Card className="layout-card hover:shadow-card transition-all cursor-pointer group">
+    <Link href={task.milestone ? `/projects/${task.milestone.project.id}` : "#"}>
+      <Card className="hover:shadow-md transition-all cursor-pointer group border-l-4">
         <CardContent className="p-3">
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-3">
             <div className="mt-0.5">{getStatusIcon(task.status)}</div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-brand-primary group-hover:text-brand-info transition-colors line-clamp-1 text-sm">
-                {task.title}
-              </h4>
-              <p className="text-xs text-brand-secondary mt-0.5">{task.project.name} · {task.milestone.name}</p>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className={`px-1.5 py-0.5 rounded text-xs ${getPriorityStyle(task.priority)}`}>
-                  {task.priority}优先级
-                </span>
-                {task.daysUntilDeadline !== undefined && task.daysUntilDeadline <= 3 && task.status !== "已完成" && (
-                  <span className="text-xs text-brand-warning flex items-center gap-1">
-                    <Clock size={10} strokeWidth={1.5} />
-                    {task.daysUntilDeadline <= 0 ? "已逾期" : `${task.daysUntilDeadline}天后截止`}
-                  </span>
-                )}
-              </div>
-              {task.assignees && task.assignees.length > 0 && (
-                <div className="flex items-center gap-1 mt-1.5">
-                  {task.assignees.slice(0, 3).map((a, i) => (
-                    <div 
-                      key={i} 
-                      className="w-5 h-5 rounded-full bg-brand-main flex items-center justify-center text-xs text-brand-primary border-2 border-white"
-                      title={a.user.userName}
-                    >
-                      {a.user.userName.slice(0, 1)}
-                    </div>
-                  ))}
-                  {task.assignees.length > 3 && (
-                    <span className="text-xs text-brand-secondary">+{task.assignees.length - 3}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-medium group-hover:text-primary transition-colors line-clamp-1">
+                  {task.title}
+                </h4>
+                <span
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded border",
+                    getPriorityStyle(task.priority)
                   )}
+                >
+                  {getPriorityLabel(task.priority)}
+                </span>
+              </div>
+              
+              {/* 所属项目 */}
+              {task.milestone && (
+                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Briefcase size={12} />
+                    {task.milestone.project.name}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Flag size={12} />
+                    {task.milestone.name}
+                  </span>
                 </div>
               )}
+
+              {/* 截止时间和负责人 */}
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  {task.plannedDate && (
+                    <span className="flex items-center gap-1">
+                      <Calendar size={12} />
+                      {new Date(task.plannedDate).toLocaleDateString("zh-CN")}
+                    </span>
+                  )}
+                  {task.assignees && task.assignees.length > 0 && (
+                    <span className="flex items-center gap-1">
+                      <User size={12} />
+                      {task.assignees[0].user.userName}
+                      {task.assignees.length > 1 && ` +${task.assignees.length - 1}`}
+                    </span>
+                  )}
+                </div>
+                <ArrowUpRight
+                  size={14}
+                  className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                />
+              </div>
             </div>
-            <ArrowUpRight size={14} strokeWidth={1.5} className="text-brand-border group-hover:text-brand-info transition-colors" />
           </div>
         </CardContent>
       </Card>
@@ -137,99 +188,121 @@ export default function PriorityPage() {
 
   return (
     <div className="space-y-6">
-      {/* 页面标题 - Soft Tech Style */}
+      {/* 页面标题 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-page-title text-brand-primary">关键任务看板</h1>
-          <p className="text-description mt-1">按紧急重要程度管理任务优先级</p>
+          <h1 className="text-2xl font-bold tracking-tight">关键任务看板</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            按紧急重要程度管理任务优先级 · 共 {tasks.length} 个未完成任务
+          </p>
         </div>
       </div>
 
       {/* 四象限视图 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 重要且紧急 */}
-        <Card className="layout-card border-l-4 border-l-brand-warning">
+        {/* 重要且紧急 - P0 */}
+        <Card className="border-l-4 border-l-red-500">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-9 h-9 bg-brand-warning/10 rounded-md flex items-center justify-center">
-                <AlertTriangle size={18} strokeWidth={1.5} className="text-brand-warning" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <AlertTriangle size={20} className="text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-brand-primary text-sm">重要且紧急</h3>
-                <p className="text-xs text-brand-secondary">立即处理 · {urgentImportant.length}个任务</p>
+                <h3 className="font-semibold">重要且紧急</h3>
+                <p className="text-xs text-muted-foreground">
+                  立即处理 · {urgentImportant.length}个任务
+                </p>
               </div>
             </div>
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {urgentImportant.length === 0 ? (
-                <p className="text-center text-brand-secondary py-6 text-sm">暂无任务</p>
+                <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                  <CheckCircle2 size={32} className="mx-auto mb-2 text-green-500" />
+                  <p className="text-sm">暂无紧急任务</p>
+                </div>
               ) : (
-                urgentImportant.map(task => <TaskCard key={task.id} task={task} />)
+                urgentImportant.map((task) => <TaskCard key={task.id} task={task} />)
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* 重要不紧急 */}
-        <Card className="layout-card border-l-4 border-l-brand-success">
+        {/* 重要不紧急 - P1 */}
+        <Card className="border-l-4 border-l-amber-500">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-9 h-9 bg-brand-success/10 rounded-md flex items-center justify-center">
-                <Flag size={18} strokeWidth={1.5} className="text-brand-success" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                <Flag size={20} className="text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-brand-primary text-sm">重要不紧急</h3>
-                <p className="text-xs text-brand-secondary">计划安排 · {importantNotUrgent.length}个任务</p>
+                <h3 className="font-semibold">重要不紧急</h3>
+                <p className="text-xs text-muted-foreground">
+                  计划安排 · {importantNotUrgent.length}个任务
+                </p>
               </div>
             </div>
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {importantNotUrgent.length === 0 ? (
-                <p className="text-center text-brand-secondary py-6 text-sm">暂无任务</p>
+                <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                  <CheckCircle2 size={32} className="mx-auto mb-2 text-green-500" />
+                  <p className="text-sm">暂无高优先级任务</p>
+                </div>
               ) : (
-                importantNotUrgent.map(task => <TaskCard key={task.id} task={task} />)
+                importantNotUrgent.map((task) => <TaskCard key={task.id} task={task} />)
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* 紧急不重要 */}
-        <Card className="layout-card border-l-4 border-l-brand-info">
+        {/* 紧急不重要 - P2有风险 */}
+        <Card className="border-l-4 border-l-blue-500">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-9 h-9 bg-brand-info/10 rounded-md flex items-center justify-center">
-                <Clock size={18} strokeWidth={1.5} className="text-brand-info" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Clock size={20} className="text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-brand-primary text-sm">紧急不重要</h3>
-                <p className="text-xs text-brand-secondary">尽量委托 · {urgentNotImportant.length}个任务</p>
+                <h3 className="font-semibold">有风险任务</h3>
+                <p className="text-xs text-muted-foreground">
+                  需要关注 · {urgentNotImportant.length}个任务
+                </p>
               </div>
             </div>
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {urgentNotImportant.length === 0 ? (
-                <p className="text-center text-brand-secondary py-6 text-sm">暂无任务</p>
+                <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                  <CheckCircle2 size={32} className="mx-auto mb-2 text-green-500" />
+                  <p className="text-sm">暂无风险任务</p>
+                </div>
               ) : (
-                urgentNotImportant.map(task => <TaskCard key={task.id} task={task} />)
+                urgentNotImportant.map((task) => <TaskCard key={task.id} task={task} />)
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* 不重要不紧急 */}
-        <Card className="layout-card border-l-4 border-l-brand-border">
+        {/* 不重要不紧急 - P2正常 */}
+        <Card className="border-l-4 border-l-gray-300">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-9 h-9 bg-brand-main rounded-md flex items-center justify-center">
-                <CheckCircle2 size={18} strokeWidth={1.5} className="text-brand-secondary" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                <CheckCircle2 size={20} className="text-gray-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-brand-primary text-sm">不重要不紧急</h3>
-                <p className="text-xs text-brand-secondary">有空再做 · {neither.length}个任务</p>
+                <h3 className="font-semibold">普通任务</h3>
+                <p className="text-xs text-muted-foreground">
+                  按计划执行 · {neither.length}个任务
+                </p>
               </div>
             </div>
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {neither.length === 0 ? (
-                <p className="text-center text-brand-secondary py-6 text-sm">暂无任务</p>
+                <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                  <CheckCircle2 size={32} className="mx-auto mb-2 text-green-500" />
+                  <p className="text-sm">暂无普通任务</p>
+                </div>
               ) : (
-                neither.map(task => <TaskCard key={task.id} task={task} />)
+                neither.map((task) => <TaskCard key={task.id} task={task} />)
               )}
             </div>
           </CardContent>
