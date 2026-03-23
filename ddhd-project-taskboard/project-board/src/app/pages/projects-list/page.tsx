@@ -154,17 +154,34 @@ export default function ProjectsListPage() {
           <Filter size={18} strokeWidth={1.5} />
           筛选
         </Button>
-        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
-          <SelectTrigger className="w-44 h-11 rounded-md border-brand-border bg-white">
-            <ArrowUpDown size={16} strokeWidth={1.5} className="mr-2 text-brand-secondary" />
-            <SelectValue placeholder="排序方式" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="created">创建时间</SelectItem>
-            <SelectItem value="updated">最近更新</SelectItem>
-            <SelectItem value="progress">完成进度</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="relative">
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+            <SelectTrigger className="w-44 h-11 rounded-md border-brand-border bg-white px-3 [&>svg]:hidden">
+              <ArrowUpDown size={16} strokeWidth={1.5} className="text-brand-secondary" />
+              <SelectValue placeholder="排序方式" />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="created">
+                <span className="flex items-center gap-2">
+                  <ArrowUpDown size={14} strokeWidth={1.5} />
+                  创建时间
+                </span>
+              </SelectItem>
+              <SelectItem value="updated">
+                <span className="flex items-center gap-2">
+                  <ArrowUpDown size={14} strokeWidth={1.5} />
+                  最近更新
+                </span>
+              </SelectItem>
+              <SelectItem value="progress">
+                <span className="flex items-center gap-2">
+                  <ArrowUpDown size={14} strokeWidth={1.5} />
+                  完成进度
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* 项目卡片网格 */}
