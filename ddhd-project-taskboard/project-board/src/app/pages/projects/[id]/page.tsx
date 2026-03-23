@@ -14,7 +14,6 @@ import {
   Target,
   Flag,
   ChevronRight,
-  X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -129,7 +128,6 @@ export default function ProjectDetailPage() {
       });
 
       if (res.ok) {
-        const result = await res.json();
         toast.success("任务创建成功");
         setIsCreateDialogOpen(false);
         setNewTaskTitle("");
