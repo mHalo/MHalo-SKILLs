@@ -62,7 +62,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { title, status, priority, dueDate, reason } = body;
+    const { title, status, priority, dueDate, reason, completionNote } = body;
 
     // 获取当前任务信息用于日志
     const existingTask = await prisma.task.findUnique({
@@ -82,6 +82,12 @@ export async function PUT(
     if (status !== undefined) updateData.status = status;
     if (priority !== undefined) updateData.priority = priority;
     if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
+    if (completionNote !== undefined) updateData.completionNote = completionNote;
+    
+    // 如果状态变为已完成，设置实际完成日期
+    if (status === "已完成" && existingTask.status !== "已完成") {
+      updateData.actualDate = new Date();
+    }
 
     // 先更新任务
     const updatedTask = await prisma.task.update({

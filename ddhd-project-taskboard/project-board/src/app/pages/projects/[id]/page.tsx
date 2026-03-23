@@ -104,6 +104,7 @@ export default function ProjectDetailPage() {
     taskId: "",
     taskTitle: "",
   });
+  const [completionNote, setCompletionNote] = useState("");
 
   useEffect(() => {
     if (params.id) {
@@ -228,14 +229,21 @@ export default function ProjectDetailPage() {
     if (!confirmDialog.taskId || !confirmDialog.newStatus) return;
     
     try {
+      const body: Record<string, string> = { status: confirmDialog.newStatus };
+      // 如果是标记为完成，添加完成说明
+      if (confirmDialog.newStatus === "已完成" && completionNote.trim()) {
+        body.completionNote = completionNote;
+      }
+      
       const res = await fetch(`/api/tasks/${confirmDialog.taskId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: confirmDialog.newStatus }),
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {
         toast.success(`任务已${confirmDialog.newStatus === "已完成" ? "完成" : "重启"}`);
+        setCompletionNote("");
         await fetchProject(false);
       } else {
         toast.error("更新任务状态失败");
@@ -249,6 +257,7 @@ export default function ProjectDetailPage() {
 
   const openConfirmDialog = (type: "delete" | "toggle", task: Task) => {
     const newStatus = task.status === "已完成" ? "进行中" : "已完成";
+    setCompletionNote(""); // 重置完成说明
     setConfirmDialog({
       isOpen: true,
       type,
@@ -718,7 +727,7 @@ export default function ProjectDetailPage() {
       </Dialog>
 
       <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className={cn("sm:max-w-sm", confirmDialog.type === "toggle" && confirmDialog.newStatus === "已完成" && "sm:max-w-md")}>
           <DialogHeader>
             <DialogTitle>
               {confirmDialog.type === "delete" ? "确认删除任务" : "确认更改任务状态"}
@@ -731,6 +740,24 @@ export default function ProjectDetailPage() {
               )}
             </DialogDescription>
           </DialogHeader>
+          
+          {/* 完成说明输入框 - 仅在标记为完成时显示 */}
+          {confirmDialog.type === "toggle" && confirmDialog.newStatus === "已完成" && (
+            <div className="py-4">
+              <Label htmlFor="completionNote" className="text-sm font-medium">
+                完成说明（可选）
+              </Label>
+              <textarea
+                id="completionNote"
+                className="w-full mt-2 p-3 text-sm border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                rows={3}
+                placeholder="简要说明任务完成情况、交付物等..."
+                value={completionNote}
+                onChange={(e) => setCompletionNote(e.target.value)}
+              />
+            </div>
+          )}
+          
           <DialogFooter className="gap-2">
             <Button 
               variant="outline" 
