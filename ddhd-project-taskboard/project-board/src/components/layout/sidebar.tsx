@@ -9,6 +9,7 @@ import {
   Users,
   AlertCircle,
   Plus,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,36 +18,31 @@ interface SidebarProps {
   className?: string;
 }
 
-const menuItems = [
+const mainMenuItems = [
   {
     icon: LayoutDashboard,
     label: "仪表盘",
-    href: "/",
-    description: "项目看板整体分配及执行状况",
+    href: "/dashboard",
   },
   {
     icon: FolderKanban,
     label: "项目列表",
-    href: "/projects-list",
-    description: "所有项目的详细列表",
+    href: "/dashboard/projects-list",
   },
   {
     icon: CalendarDays,
     label: "日历看板",
-    href: "/calendar",
-    description: "本周项目任务时间轴",
+    href: "/dashboard/calendar",
   },
   {
     icon: Users,
     label: "人员看板",
-    href: "/people",
-    description: "按责任人查看任务",
+    href: "/dashboard/people",
   },
   {
     icon: AlertCircle,
-    label: "关键任务看板",
-    href: "/priority",
-    description: "按紧急重要程度分类",
+    label: "关键任务",
+    href: "/dashboard/priority",
   },
 ];
 
@@ -56,37 +52,41 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col h-screen w-72 bg-slate-900 text-white border-r border-slate-800",
+        "flex flex-col h-screen w-64 bg-white border-r border-brand-border",
         className
       )}
     >
-      {/* 顶部系统名称 */}
-      <div className="p-6 border-b border-slate-800">
-        <Link href="/" className="block">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            DDHD项目看板
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            项目管理协作平台
-          </p>
+      {/* Logo区域 */}
+      <div className="p-6">
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center">
+            <span className="text-white font-bold text-lg">D</span>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-brand-primary">DDHD</h1>
+            <p className="text-xs text-brand-secondary">项目看板</p>
+          </div>
         </Link>
       </div>
 
       {/* 新建项目按钮 */}
-      <div className="p-4">
-        <Link href="/projects/new" className="block">
+      <div className="px-4 mb-6">
+        <Link href="/dashboard/projects/new" className="block">
           <Button
-            className="w-full h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base gap-2 shadow-lg shadow-blue-900/50"
+            className="w-full h-11 bg-brand-primary hover:opacity-90 text-white font-medium rounded-md gap-2 shadow-soft transition-all"
           >
-            <Plus className="w-5 h-5" />
+            <Plus size={20} strokeWidth={1.5} />
             新建项目
           </Button>
         </Link>
       </div>
 
-      {/* 菜单项 */}
-      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
+      {/* 主菜单 */}
+      <nav className="flex-1 px-3 space-y-1">
+        <div className="text-xs font-semibold text-brand-secondary uppercase tracking-wider px-3 mb-3">
+          主菜单
+        </div>
+        {mainMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
@@ -95,40 +95,40 @@ export function Sidebar({ className }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-start gap-3 px-4 py-3 rounded-lg transition-all duration-200 group",
+                "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 group",
                 isActive
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "nav-item-active font-medium"
+                  : "text-brand-secondary hover:bg-brand-main hover:text-brand-primary"
               )}
             >
-              <Icon className={cn(
-                "w-5 h-5 mt-0.5 shrink-0",
-                isActive ? "text-white" : "text-slate-400 group-hover:text-white"
-              )} />
-              <div className="flex-1 min-w-0">
-                <div className={cn(
-                  "font-medium text-sm",
-                  isActive ? "text-white" : "text-slate-200"
-                )}>
-                  {item.label}
-                </div>
-                <div className={cn(
-                  "text-xs mt-0.5 leading-relaxed",
-                  isActive ? "text-blue-100" : "text-slate-500 group-hover:text-slate-400"
-                )}>
-                  {item.description}
-                </div>
+              <div className={cn(
+                "w-9 h-9 rounded-md flex items-center justify-center transition-colors",
+                isActive
+                  ? "bg-white/20 text-white"
+                  : "bg-brand-main text-brand-secondary group-hover:bg-white group-hover:shadow-card"
+              )}>
+                <Icon size={20} strokeWidth={1.5} />
               </div>
+              <span className="text-sm">{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* 底部系统版本 */}
-      <div className="p-4 border-t border-slate-800">
-        <div className="flex items-center justify-between text-xs text-slate-500">
-          <span>系统版本</span>
-          <span className="font-mono">v1.0.0</span>
+      {/* 底部设置 */}
+      <div className="p-4 border-t border-brand-border">
+        <button className="flex items-center gap-3 px-3 py-2.5 rounded-md text-brand-secondary hover:bg-brand-main hover:text-brand-primary transition-all w-full">
+          <div className="w-9 h-9 rounded-md bg-brand-main flex items-center justify-center">
+            <Settings size={20} strokeWidth={1.5} />
+          </div>
+          <span className="text-sm">设置</span>
+        </button>
+        
+        <div className="mt-4 pt-4 border-t border-brand-border">
+          <div className="flex items-center justify-between text-xs text-brand-secondary px-3">
+            <span>版本</span>
+            <span className="font-mono bg-brand-main px-2 py-0.5 rounded">v1.0.0</span>
+          </div>
         </div>
       </div>
     </div>

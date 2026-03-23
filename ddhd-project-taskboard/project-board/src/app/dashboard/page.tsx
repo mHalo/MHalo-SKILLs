@@ -158,7 +158,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <Link 
-              href="/priority" 
+              href="/dashboard/priority" 
               className="px-4 py-2 bg-brand-warning text-white text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
             >
               查看详情
@@ -172,7 +172,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-module-title text-brand-primary">最近项目</h2>
           <Link 
-            href="/projects-list" 
+            href="/dashboard/projects-list" 
             className="text-sm text-brand-info hover:opacity-80 flex items-center gap-1 font-medium transition-opacity"
           >
             查看全部
