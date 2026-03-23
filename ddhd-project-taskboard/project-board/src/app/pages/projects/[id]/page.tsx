@@ -89,9 +89,9 @@ export default function ProjectDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
-  const fetchProject = async () => {
+  const fetchProject = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const res = await fetch(`/api/projects/${params.id}`);
       const data = await res.json();
       if (data.data) {
@@ -100,7 +100,7 @@ export default function ProjectDetailPage() {
     } catch {
       toast.error("获取项目详情失败");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -129,13 +129,16 @@ export default function ProjectDetailPage() {
       });
 
       if (res.ok) {
+        const result = await res.json();
         toast.success("任务创建成功");
         setIsCreateDialogOpen(false);
         setNewTaskTitle("");
         setNewTaskPriority("P1");
-        fetchProject(); // 刷新项目数据
+        // 静默刷新，不显示加载状态
+        await fetchProject(false);
       } else {
-        toast.error("创建任务失败");
+        const error = await res.json().catch(() => ({}));
+        toast.error(error.error || "创建任务失败");
       }
     } catch {
       toast.error("创建任务失败");
@@ -489,7 +492,9 @@ export default function ProjectDetailPage() {
                 onValueChange={setSelectedMilestoneId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="选择里程碑" />
+                  <SelectValue placeholder="选择里程碑">
+                    {selectedMilestoneId && project?.milestones?.find(m => m.id === selectedMilestoneId)?.name}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {project.milestones?.map((milestone) => (
