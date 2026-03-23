@@ -21,27 +21,27 @@ const mainMenuItems = [
   {
     icon: LayoutDashboard,
     label: "仪表盘",
-    href: "/pages/dashboard",
+    href: "/dashboard",
   },
   {
     icon: FolderKanban,
     label: "项目列表",
-    href: "/pages/projects-list",
+    href: "/projects-list",
   },
   {
     icon: CalendarDays,
     label: "日历",
-    href: "/pages/calendar",
+    href: "/calendar",
   },
   {
     icon: Users,
     label: "人员",
-    href: "/pages/people",
+    href: "/people",
   },
   {
     icon: AlertCircle,
     label: "关键",
-    href: "/pages/priority",
+    href: "/priority",
   },
 ];
 
@@ -57,7 +57,7 @@ export function Sidebar({ className }: SidebarProps) {
     >
       {/* Logo区域 */}
       <div className="h-16 flex items-center justify-center border-b border-brand-border">
-        <Link href="/pages/dashboard" className="flex items-center justify-center">
+        <Link href="/dashboard" className="flex items-center justify-center">
           <div className="w-10 h-10 rounded-lg bg-brand-primary flex items-center justify-center">
             <span className="text-white font-bold text-lg">D</span>
           </div>
@@ -66,7 +66,7 @@ export function Sidebar({ className }: SidebarProps) {
 
       {/* 新建项目按钮 */}
       <div className="p-3">
-        <Link href="/pages/projects/new" className="block">
+        <Link href="/projects/new" className="block">
           <Button
             className="w-full h-10 bg-brand-primary hover:opacity-90 text-white font-medium rounded-lg gap-0 shadow-soft transition-all"
           >
