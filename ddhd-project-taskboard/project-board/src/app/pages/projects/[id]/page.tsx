@@ -14,6 +14,7 @@ import {
   Target,
   Flag,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface Project {
@@ -57,6 +74,13 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("milestones");
+  
+  // 创建任务弹窗状态
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState("P1");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -78,6 +102,56 @@ export default function ProjectDetailPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 创建任务
+  const handleCreateTask = async () => {
+    if (!newTaskTitle.trim()) {
+      toast.error("请输入任务名称");
+      return;
+    }
+    if (!selectedMilestoneId) {
+      toast.error("请选择里程碑");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTaskTitle,
+          milestoneId: selectedMilestoneId,
+          priority: newTaskPriority,
+          status: "待开始",
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("任务创建成功");
+        setIsCreateDialogOpen(false);
+        setNewTaskTitle("");
+        setNewTaskPriority("P1");
+        fetchProject(); // 刷新项目数据
+      } else {
+        toast.error("创建任务失败");
+      }
+    } catch {
+      toast.error("创建任务失败");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 打开创建弹窗
+  const openCreateDialog = (milestoneId?: string) => {
+    if (milestoneId) {
+      setSelectedMilestoneId(milestoneId);
+    } else if (project?.milestones[0]) {
+      setSelectedMilestoneId(project.milestones[0].id);
+    }
+    setIsCreateDialogOpen(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -229,9 +303,13 @@ export default function ProjectDetailPage() {
                   )}
                 </div>
               </div>
-              <Button size="sm" variant="ghost" className="h-7 text-xs">
+              <Button 
+                size="sm" 
+                className="h-8 text-xs"
+                onClick={() => openCreateDialog()}
+              >
                 <Plus size={14} className="mr-1" />
-                添加
+                添加任务
               </Button>
             </div>
           </div>
@@ -336,6 +414,19 @@ export default function ProjectDetailPage() {
                         )}
                       </div>
                     )}
+                    
+                    {/* 添加任务按钮 */}
+                    <div className="px-4 py-2 border-t border-border/50">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => openCreateDialog(milestone.id)}
+                      >
+                        <Plus size={14} className="mr-1" />
+                        添加任务
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -383,6 +474,72 @@ export default function ProjectDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* 创建任务弹窗 */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>创建新任务</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="milestone">所属里程碑</Label>
+              <Select 
+                value={selectedMilestoneId} 
+                onValueChange={setSelectedMilestoneId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择里程碑" />
+                </SelectTrigger>
+                <SelectContent>
+                  {project.milestones?.map((milestone) => (
+                    <SelectItem key={milestone.id} value={milestone.id}>
+                      {milestone.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="title">任务名称</Label>
+              <Input
+                id="title"
+                placeholder="输入任务名称"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="priority">优先级</Label>
+              <Select value={newTaskPriority} onValueChange={setNewTaskPriority}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="P0">P0 - 紧急</SelectItem>
+                  <SelectItem value="P1">P1 - 高</SelectItem>
+                  <SelectItem value="P2">P2 - 中</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCreateDialogOpen(false)}
+              disabled={isSubmitting}
+            >
+              取消
+            </Button>
+            <Button 
+              onClick={handleCreateTask}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "创建中..." : "创建"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
