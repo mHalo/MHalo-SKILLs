@@ -141,7 +141,7 @@ export default function ProjectsListPage() {
             const hasRisk = stats.atRiskTasks > 0;
             
             return (
-              <Link key={project.id} href={`/projects/${project.id}`}>
+              <Link key={project.id} href={`/pages/projects/${project.id}`}>
                 <Card className="layout-card hover:shadow-card transition-all cursor-pointer group">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">

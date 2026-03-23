@@ -120,7 +120,7 @@ export default function ProjectDetailPage() {
           <FolderOpen size={32} strokeWidth={1.5} className="text-brand-secondary" />
         </div>
         <h3 className="text-xl font-semibold text-brand-primary mb-2">项目不存在</h3>
-        <Link href="/dashboard/projects-list" className="text-brand-info hover:underline">
+        <Link href="/pages/projects-list" className="text-brand-info hover:underline">
           返回项目列表
         </Link>
       </div>
@@ -131,7 +131,7 @@ export default function ProjectDetailPage() {
     <div className="space-y-6">
       {/* 返回按钮 */}
       <Link 
-        href="/dashboard/projects-list"
+        href="/pages/projects-list"
         className="inline-flex items-center gap-2 text-brand-secondary hover:text-brand-primary transition-colors"
       >
         <ArrowLeft size={16} strokeWidth={1.5} />
