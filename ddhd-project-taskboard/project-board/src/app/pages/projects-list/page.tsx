@@ -2,19 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FolderOpen, Clock, AlertCircle, Search, Filter, ArrowUpDown, CheckCircle2 } from "lucide-react";
+import { FolderOpen, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface Project {
@@ -24,8 +15,6 @@ interface Project {
   type: string;
   status: string;
   client: string | null;
-  createdAt?: string;
-  updatedAt?: string;
   milestones?: {
     id: string;
     status: string;
@@ -33,12 +22,9 @@ interface Project {
   }[];
 }
 
-type SortBy = "created" | "updated" | "progress";
-
 export default function ProjectsListPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<SortBy>("created");
 
   useEffect(() => {
     fetchProjects();
@@ -96,32 +82,10 @@ export default function ProjectsListPage() {
     return { completionRate, completedMilestones, totalMilestones, pendingTasks, atRiskTasks };
   };
 
-  // 排序项目
-  const sortedProjects = [...projects].sort((a, b) => {
-    switch (sortBy) {
-      case "created":
-        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-      case "updated":
-        return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
-      case "progress": {
-        const statsA = getProjectStats(a);
-        const statsB = getProjectStats(b);
-        return statsB.completionRate - statsA.completionRate;
-      }
-      default:
-        return 0;
-    }
-  });
-
   if (loading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
-        <div className="flex gap-4">
-          <Skeleton className="h-10 flex-1" />
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 w-40" />
-        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-64 rounded-lg" />
@@ -141,49 +105,6 @@ export default function ProjectsListPage() {
         </div>
       </div>
 
-      {/* 搜索、筛选和排序 */}
-      <div className="flex gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search size={18} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-secondary" />
-          <Input 
-            placeholder="搜索项目..." 
-            className="pl-10 h-11 rounded-md border-brand-border bg-white"
-          />
-        </div>
-        <Button variant="outline" className="h-11 px-4 rounded-md border-brand-border gap-2 text-brand-secondary hover:text-brand-primary">
-          <Filter size={18} strokeWidth={1.5} />
-          筛选
-        </Button>
-        <div className="relative">
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
-            <SelectTrigger className="w-44 h-11 rounded-md border-brand-border bg-white px-3 [&>svg]:hidden">
-              <ArrowUpDown size={16} strokeWidth={1.5} className="text-brand-secondary" />
-              <SelectValue placeholder="排序方式" />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="created">
-                <span className="flex items-center gap-2">
-                  <ArrowUpDown size={14} strokeWidth={1.5} />
-                  创建时间
-                </span>
-              </SelectItem>
-              <SelectItem value="updated">
-                <span className="flex items-center gap-2">
-                  <ArrowUpDown size={14} strokeWidth={1.5} />
-                  最近更新
-                </span>
-              </SelectItem>
-              <SelectItem value="progress">
-                <span className="flex items-center gap-2">
-                  <ArrowUpDown size={14} strokeWidth={1.5} />
-                  完成进度
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       {/* 项目卡片网格 */}
       {projects.length === 0 ? (
         <Card className="layout-card">
@@ -197,7 +118,7 @@ export default function ProjectsListPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedProjects.map((project) => {
+          {projects.map((project) => {
             const stats = getProjectStats(project);
             const hasRisk = stats.atRiskTasks > 0;
             
