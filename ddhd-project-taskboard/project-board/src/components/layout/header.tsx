@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Moon, Sun, Settings } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,14 @@ interface HeaderProps {
 }
 
 export function Header({ onSearch }: HeaderProps) {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  // 避免 hydration 不匹配
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -46,10 +52,14 @@ export function Header({ onSearch }: HeaderProps) {
           variant="ghost"
           size="icon"
           className="w-10 h-10 rounded-lg hover:bg-brand-main"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         >
-          {theme === "dark" ? (
-            <Sun size={20} strokeWidth={1.5} className="text-brand-secondary" />
+          {mounted ? (
+            resolvedTheme === "dark" ? (
+              <Sun size={20} strokeWidth={1.5} className="text-brand-secondary" />
+            ) : (
+              <Moon size={20} strokeWidth={1.5} className="text-brand-secondary" />
+            )
           ) : (
             <Moon size={20} strokeWidth={1.5} className="text-brand-secondary" />
           )}
