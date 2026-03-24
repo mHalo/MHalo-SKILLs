@@ -3,10 +3,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { format } from "date-fns";
 import {
   FolderOpen,
   ArrowLeft,
-  Calendar,
+  Calendar as CalendarIcon,
   CheckCircle2,
   Clock,
   Plus,
@@ -47,6 +48,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 import { CreateTaskDialog } from "@/components/task/create-task-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 interface Project {
   id: string;
@@ -97,6 +100,7 @@ export default function ProjectDetailPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateMilestoneDialogOpen, setIsCreateMilestoneDialogOpen] = useState(false);
   const [newMilestoneName, setNewMilestoneName] = useState("");
+  const [newMilestoneDueDate, setNewMilestoneDueDate] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState("P1");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -243,12 +247,14 @@ export default function ProjectDetailPage() {
           name: newMilestoneName.trim(),
           projectId: project?.id,
           status: "待开始",
+          dueDate: newMilestoneDueDate || null,
         }),
       });
 
       if (res.ok) {
         toast.success("里程碑创建成功");
         setNewMilestoneName("");
+        setNewMilestoneDueDate("");
         setIsCreateMilestoneDialogOpen(false);
         await fetchProject(false);
       } else {
@@ -413,7 +419,7 @@ export default function ProjectDetailPage() {
               </p>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Calendar size={12} />
+                  <CalendarIcon size={12} />
                   {new Date(project.createdAt).toLocaleDateString("zh-CN")}
                 </span>
                 {project.client && (
@@ -538,7 +544,7 @@ export default function ProjectDetailPage() {
                     
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <Calendar size={11} />
+                        <CalendarIcon size={11} />
                         {milestone.dueDate 
                           ? new Date(milestone.dueDate).toLocaleDateString("zh-CN", {month: "short", day: "numeric"})
                           : "无截止"
@@ -829,12 +835,41 @@ export default function ProjectDetailPage() {
                 onChange={(e) => setNewMilestoneName(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label>截止日期</Label>
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-start text-left font-normal"
+                    />
+                  }
+                >
+                  {newMilestoneDueDate ? (
+                    format(new Date(newMilestoneDueDate), "yyyy-MM-dd")
+                  ) : (
+                    <span className="text-muted-foreground">选择截止日期（可选）</span>
+                  )}
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newMilestoneDueDate ? new Date(newMilestoneDueDate) : undefined}
+                    onSelect={(date) => setNewMilestoneDueDate(date ? format(date, "yyyy-MM-dd") : "")}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
                 setNewMilestoneName("");
+                setNewMilestoneDueDate("");
                 setIsCreateMilestoneDialogOpen(false);
               }}
               disabled={isSubmitting}
