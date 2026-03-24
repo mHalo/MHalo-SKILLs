@@ -363,8 +363,10 @@ export default function PriorityPage() {
           <div className="flex items-center gap-3">
             {/* 状态筛选 */}
             <Select value={statusFilter} onValueChange={(v) => v && setStatusFilter(v)}>
-              <SelectTrigger className="w-[100px] h-8 text-xs">
-                <SelectValue />
+              <SelectTrigger className="w-[110px] h-8 text-xs">
+                <SelectValue>
+                  {statusFilter === "completed" ? "已完成" : statusFilter === "all" ? "全部" : "未完成"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="uncompleted">未完成</SelectItem>
@@ -376,7 +378,9 @@ export default function PriorityPage() {
             {/* 项目筛选 */}
             <Select value={selectedProject} onValueChange={(v) => v && setSelectedProject(v)}>
               <SelectTrigger className="w-[140px] h-8 text-xs">
-                <SelectValue placeholder="全部项目" />
+                <SelectValue>
+                  {selectedProject === "all" ? "全部项目" : projects.find(p => p.id === selectedProject)?.name || selectedProject}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部项目</SelectItem>
