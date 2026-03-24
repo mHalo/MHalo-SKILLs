@@ -89,7 +89,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* 欢迎区域 - Soft Tech Style */}
       <div>
-        <h1 className="text-page-title text-brand-primary mb-1">下午好，指挥官</h1>
+        <h1 className="text-page-title text-brand-primary mb-1">下午好，叮当的小伙伴们~</h1>
         <p className="text-description">这是您今天的项目概览</p>
       </div>
 

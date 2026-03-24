@@ -12,7 +12,8 @@
       "Bash(tasklist:*)",
       "Bash(wmic process:*)",
       "Bash(npx eslint:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx next:*)"
     ]
   }
 }

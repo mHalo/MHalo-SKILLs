@@ -42,14 +42,14 @@ const mainMenuItems = [
     href: "/projects-list",
   },
   {
-    icon: CalendarDays,
-    label: "日历",
-    href: "/calendar",
-  },
-  {
     icon: Users,
     label: "人员",
     href: "/people",
+  },
+  {
+    icon: CalendarDays,
+    label: "日历",
+    href: "/calendar",
   },
   {
     icon: AlertCircle,
@@ -147,7 +147,7 @@ export function Sidebar({ className }: SidebarProps) {
         <div className="p-3 border-t border-brand-border dark:border-gray-800">
           <Button
             onClick={() => setIsCreateDialogOpen(true)}
-            className="w-full h-10 bg-brand-primary hover:opacity-90 text-white font-medium rounded-lg gap-0 shadow-soft transition-all"
+            className="w-full cursor-pointer h-10 bg-brand-primary hover:opacity-90 text-white font-medium rounded-lg gap-0 shadow-soft transition-all"
           >
             <Plus size={20} strokeWidth={1.5} />
           </Button>

@@ -621,7 +621,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-4 h-full flex flex-col max-w-6xl mx-auto">
+    <div className="space-y-4 h-full flex flex-col max-w-7xl mx-auto">
       {/* 顶部统计 */}
       <div className="grid grid-cols-4 gap-4">
         <Card>
@@ -746,7 +746,7 @@ export default function CalendarPage() {
                       {newEvent.projectId ? (projects.find(p => p.id === newEvent.projectId)?.name || "选择项目") : "选择项目"}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent   alignItemWithTrigger={false}>
                     {projects.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
@@ -763,10 +763,10 @@ export default function CalendarPage() {
                     setNewEvent({ ...newEvent, eventType: v || "会议" })
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent   alignItemWithTrigger={false}>
                     <SelectItem value="会议">会议</SelectItem>
                     <SelectItem value="拜访">拜访</SelectItem>
                     <SelectItem value="评审">评审</SelectItem>
