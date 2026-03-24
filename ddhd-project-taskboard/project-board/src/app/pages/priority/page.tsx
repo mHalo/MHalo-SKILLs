@@ -41,12 +41,17 @@ interface Task {
   priority: string;
   status: string;
   plannedDate?: string;
-  milestone?: { 
+  milestone?: {
     id: string;
-    name: string; 
-    project: { id: string; name: string } 
+    name: string;
+    project: { id: string; name: string }
   };
   assignees?: { user: { userName: string; avatar?: string } }[];
+}
+
+interface Project {
+  id: string;
+  name: string;
 }
 
 interface QuadrantData {
@@ -62,9 +67,12 @@ interface QuadrantData {
 
 export default function PriorityPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedQuadrant, setSelectedQuadrant] = useState<string>("");
+  const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("uncompleted");
   const [newTask, setNewTask] = useState({
     title: "",
     priority: "P1",
@@ -74,6 +82,7 @@ export default function PriorityPage() {
 
   useEffect(() => {
     fetchTasks();
+    fetchProjects();
   }, []);
 
   const fetchTasks = async () => {
@@ -82,15 +91,24 @@ export default function PriorityPage() {
       const res = await fetch("/api/tasks?limit=200");
       const data = await res.json();
       if (data.data) {
-        const incompleteTasks = data.data.filter(
-          (t: Task) => t.status !== "已完成"
-        );
-        setTasks(incompleteTasks);
+        setTasks(data.data);
       }
     } catch {
       toast.error("获取任务数据失败");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch("/api/projects");
+      const data = await res.json();
+      if (data.data) {
+        setProjects(data.data);
+      }
+    } catch {
+      toast.error("获取项目列表失败");
     }
   };
 
@@ -137,7 +155,13 @@ export default function PriorityPage() {
     {
       key: "p0",
       title: "重要且紧急",
-      tasks: tasks.filter((t) => t.priority === "P0"),
+      tasks: tasks.filter((t) => {
+        const matchProject = selectedProject === "all" || t.milestone?.project.id === selectedProject;
+        const matchStatus = statusFilter === "all" ||
+          (statusFilter === "completed" && t.status === "已完成") ||
+          (statusFilter === "uncompleted" && t.status !== "已完成");
+        return t.priority === "P0" && matchProject && matchStatus;
+      }),
       icon: AlertTriangle,
       accentColor: "text-[#FF6231]",
       bgColor: "bg-[#FF6231]",
@@ -147,7 +171,13 @@ export default function PriorityPage() {
     {
       key: "p1",
       title: "重要不紧急",
-      tasks: tasks.filter((t) => t.priority === "P1"),
+      tasks: tasks.filter((t) => {
+        const matchProject = selectedProject === "all" || t.milestone?.project.id === selectedProject;
+        const matchStatus = statusFilter === "all" ||
+          (statusFilter === "completed" && t.status === "已完成") ||
+          (statusFilter === "uncompleted" && t.status !== "已完成");
+        return t.priority === "P1" && matchProject && matchStatus;
+      }),
       icon: Flag,
       accentColor: "text-[#25B079]",
       bgColor: "bg-[#25B079]",
@@ -157,7 +187,13 @@ export default function PriorityPage() {
     {
       key: "risk",
       title: "有风险任务",
-      tasks: tasks.filter((t) => t.priority === "P2" && t.status === "有风险"),
+      tasks: tasks.filter((t) => {
+        const matchProject = selectedProject === "all" || t.milestone?.project.id === selectedProject;
+        const matchStatus = statusFilter === "all" ||
+          (statusFilter === "completed" && t.status === "已完成") ||
+          (statusFilter === "uncompleted" && t.status !== "已完成");
+        return t.priority === "P2" && t.status === "有风险" && matchProject && matchStatus;
+      }),
       icon: Clock,
       accentColor: "text-[#637CFF]",
       bgColor: "bg-[#637CFF]",
@@ -167,7 +203,13 @@ export default function PriorityPage() {
     {
       key: "normal",
       title: "普通任务",
-      tasks: tasks.filter((t) => t.priority === "P2" && t.status !== "有风险"),
+      tasks: tasks.filter((t) => {
+        const matchProject = selectedProject === "all" || t.milestone?.project.id === selectedProject;
+        const matchStatus = statusFilter === "all" ||
+          (statusFilter === "completed" && t.status === "已完成") ||
+          (statusFilter === "uncompleted" && t.status !== "已完成");
+        return t.priority === "P2" && t.status !== "有风险" && matchProject && matchStatus;
+      }),
       icon: CheckCircle2,
       accentColor: "text-[#7E8485]",
       bgColor: "bg-[#7E8485]",
@@ -253,7 +295,7 @@ export default function PriorityPage() {
   const QuadrantColumn = ({ quadrant }: { quadrant: QuadrantData }) => {
     const Icon = quadrant.icon;
     return (
-      <div className="w-72 shrink-0 flex flex-col h-full max-h-[calc(100vh-140px)]">
+      <div className="w-72 shrink-0 flex flex-col h-full max-h-[calc(100vh-180px)]">
         {/* 头部 */}
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
@@ -311,10 +353,42 @@ export default function PriorityPage() {
     <div className="h-full flex flex-col overflow-hidden">
       {/* 头部 */}
       <div className="shrink-0 mb-4">
-        <h1 className="text-lg font-semibold text-[#1A1A1A]">关键任务看板</h1>
-        <p className="text-xs text-[#7E8485] mt-0.5">
-          共 <span className="font-medium text-[#1A1A1A]">{tasks.length}</span> 个未完成任务
-        </p>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h1 className="text-lg font-semibold text-[#1A1A1A]">紧急任务看板</h1>
+            <p className="text-xs text-[#7E8485] mt-0.5">
+              共 <span className="font-medium text-[#1A1A1A]">{tasks.length}</span> 个任务
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* 状态筛选 */}
+            <Select value={statusFilter} onValueChange={(v) => v && setStatusFilter(v)}>
+              <SelectTrigger className="w-[100px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="uncompleted">未完成</SelectItem>
+                <SelectItem value="completed">已完成</SelectItem>
+                <SelectItem value="all">全部</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* 项目筛选 */}
+            <Select value={selectedProject} onValueChange={(v) => v && setSelectedProject(v)}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="全部项目" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部项目</SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
       {/* 横向滚动的四象限 */}
