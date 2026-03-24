@@ -199,91 +199,94 @@ export function CreateTaskDialog({
             />
           </div>
 
-          {/* 优先级 */}
-          <div className="space-y-2">
-            <Label>优先级</Label>
-            <div className="flex gap-2">
-              <Button
-                variant={priority === "P0" ? "default" : "outline"}
-                size="sm"
-                className={priority === "P0" ? "bg-[#FF6231] hover:bg-[#FF6231]/90" : ""}
-                onClick={() => setPriority("P0")}
-              >
-                P0
-              </Button>
-              <Button
-                variant={priority === "P1" ? "default" : "outline"}
-                size="sm"
-                className={priority === "P1" ? "bg-[#25B079] hover:bg-[#25B079]/90" : ""}
-                onClick={() => setPriority("P1")}
-              >
-                P1
-              </Button>
-              <Button
-                variant={priority === "P2" ? "default" : "outline"}
-                size="sm"
-                className={priority === "P2" ? "bg-[#637CFF] hover:bg-[#637CFF]/90" : ""}
-                onClick={() => setPriority("P2")}
-              >
-                P2
-              </Button>
+          {/* 优先级和责任人同行 */}
+          <div className="flex gap-4">
+            {/* 优先级 */}
+            <div className="flex-1 space-y-2">
+              <Label>优先级</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={priority === "P0" ? "default" : "outline"}
+                  size="sm"
+                  className={priority === "P0" ? "bg-[#FF6231] hover:bg-[#FF6231]/90" : ""}
+                  onClick={() => setPriority("P0")}
+                >
+                  P0
+                </Button>
+                <Button
+                  variant={priority === "P1" ? "default" : "outline"}
+                  size="sm"
+                  className={priority === "P1" ? "bg-[#25B079] hover:bg-[#25B079]/90" : ""}
+                  onClick={() => setPriority("P1")}
+                >
+                  P1
+                </Button>
+                <Button
+                  variant={priority === "P2" ? "default" : "outline"}
+                  size="sm"
+                  className={priority === "P2" ? "bg-[#637CFF] hover:bg-[#637CFF]/90" : ""}
+                  onClick={() => setPriority("P2")}
+                >
+                  P2
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* 责任人 */}
-          <div className="space-y-2">
-            <Label>责任人</Label>
-            <Popover open={assigneePopoverOpen} onOpenChange={setAssigneePopoverOpen}>
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-start text-left font-normal"
+            {/* 责任人 */}
+            <div className="flex-1 space-y-2">
+              <Label>责任人</Label>
+              <Popover open={assigneePopoverOpen} onOpenChange={setAssigneePopoverOpen}>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-start text-left font-normal"
+                    />
+                  }
+                >
+                  {selectedAssignee
+                    ? assignees.find((u) => u.id === selectedAssignee)?.userName
+                    : "选择责任人"}
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Input
+                    placeholder="搜索责任人..."
+                    value={assigneeSearch}
+                    onChange={(e) => setAssigneeSearch(e.target.value)}
+                    className="border-0 border-b rounded-none"
                   />
-                }
-              >
-                {selectedAssignee
-                  ? assignees.find((u) => u.id === selectedAssignee)?.userName
-                  : "选择责任人（可选）"}
-              </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0" align="start">
-                <Input
-                  placeholder="搜索责任人..."
-                  value={assigneeSearch}
-                  onChange={(e) => setAssigneeSearch(e.target.value)}
-                  className="border-0 border-b rounded-none"
-                />
-                <ScrollArea className="max-h-[200px]">
-                  <div className="p-1">
-                    {filteredAssignees.length === 0 ? (
-                      <p className="py-2 px-2 text-sm text-muted-foreground">未找到责任人</p>
-                    ) : (
-                      filteredAssignees.map((user) => (
-                        <div
-                          key={user.id}
-                          className={cn(
-                            "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
-                            selectedAssignee === user.id && "bg-accent"
-                          )}
-                          onClick={() => {
-                            setSelectedAssignee(user.id);
-                            setAssigneePopoverOpen(false);
-                            setAssigneeSearch("");
-                          }}
-                        >
-                          <div className="w-6 h-6 rounded-full bg-[#637CFF] flex items-center justify-center text-white text-xs font-medium">
-                            {user.userName.charAt(0)}
+                  <ScrollArea className="max-h-[200px]">
+                    <div className="p-1">
+                      {filteredAssignees.length === 0 ? (
+                        <p className="py-2 px-2 text-sm text-muted-foreground">未找到责任人</p>
+                      ) : (
+                        filteredAssignees.map((user) => (
+                          <div
+                            key={user.id}
+                            className={cn(
+                              "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
+                              selectedAssignee === user.id && "bg-accent"
+                            )}
+                            onClick={() => {
+                              setSelectedAssignee(user.id);
+                              setAssigneePopoverOpen(false);
+                              setAssigneeSearch("");
+                            }}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#637CFF] flex items-center justify-center text-white text-xs font-medium">
+                              {user.userName.charAt(0)}
+                            </div>
+                            <span className="text-sm">{user.userName}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">{user.role}</span>
                           </div>
-                          <span className="text-sm">{user.userName}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">{user.role}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </PopoverContent>
-            </Popover>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           {/* 计划完成节点 */}
@@ -312,7 +315,7 @@ export function CreateTaskDialog({
                     selected={plannedDate ? new Date(plannedDate) : undefined}
                     onSelect={(date) => {
                       if (date) {
-                        const currentTime = plannedDate ? format(new Date(plannedDate), "HH:mm") : "18:00";
+                        const currentTime = plannedDate ? format(new Date(plannedDate), "HH:mm:ss") : "12:00:00";
                         setPlannedDate(format(date, "yyyy-MM-dd") + "T" + currentTime);
                       } else {
                         setPlannedDate("");
@@ -324,9 +327,11 @@ export function CreateTaskDialog({
               </Popover>
               <Input
                 type="time"
+                step="1"
+                defaultValue="12:00:00"
                 className="w-28"
                 disabled={!plannedDate}
-                value={plannedDate ? format(new Date(plannedDate), "HH:mm") : ""}
+                value={plannedDate ? format(new Date(plannedDate), "HH:mm:ss") : ""}
                 onChange={(e) => {
                   if (plannedDate) {
                     const datePart = format(new Date(plannedDate), "yyyy-MM-dd");
