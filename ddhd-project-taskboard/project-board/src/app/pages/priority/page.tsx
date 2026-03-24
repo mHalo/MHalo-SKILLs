@@ -10,6 +10,7 @@ import {
   User,
   Calendar,
   Plus,
+  FolderKanban,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -201,49 +202,51 @@ export default function PriorityPage() {
 
   // 任务卡片 - 白色背景
   const TaskCard = ({ task }: { task: Task }) => (
-    <Link href={task.milestone ? `/projects/${task.milestone.project.id}` : "#"}>
-      <div className="group p-4 rounded-xl bg-white shadow-sm hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-[#E8EDEC]">
-        {/* 标题 */}
-        <h4 className="text-sm font-semibold text-[#1A1A1A] line-clamp-2 group-hover:text-[#637CFF] transition-colors">
+    <div className="group p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#E8EDEC]">
+      {/* 标题行：任务名 + 项目链接 */}
+      <div className="flex items-start justify-between gap-2">
+        <h4 className="text-sm font-semibold text-[#1A1A1A] line-clamp-2 flex-1">
           {task.title}
         </h4>
-        
-        {/* 描述/里程碑 */}
         {task.milestone && (
-          <p className="text-xs text-[#7E8485] mt-1.5 line-clamp-1">
-            {task.milestone.project.name}
-          </p>
+          <Link
+            href={`/projects/${task.milestone.project.id}`}
+            className="shrink-0 text-[#7E8485] hover:text-[#637CFF] transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FolderKanban size={14} />
+          </Link>
         )}
+      </div>
 
-        {/* 标签行 */}
-        <div className="flex items-center gap-2 mt-3">
-          {getPriorityBadge(task.priority)}
-          {getStatusBadge(task.status)}
-        </div>
+      {/* 标签行 */}
+      <div className="flex items-center gap-2 mt-2">
+        {getPriorityBadge(task.priority)}
+        {getStatusBadge(task.status)}
+      </div>
 
-        {/* 底部信息 */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#F4F7F6]">
-          <div className="flex items-center gap-2">
-            {task.assignees && task.assignees.length > 0 && (
-              <div className="flex items-center gap-1">
-                <div className="w-5 h-5 rounded-full bg-[#637CFF] flex items-center justify-center text-[10px] text-white font-medium">
-                  {task.assignees[0].user.userName.charAt(0)}
-                </div>
-                {task.assignees.length > 1 && (
-                  <span className="text-[10px] text-[#7E8485]">+{task.assignees.length - 1}</span>
-                )}
+      {/* 底部信息 */}
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#F4F7F6]">
+        <div className="flex items-center gap-2">
+          {task.assignees && task.assignees.length > 0 && (
+            <div className="flex items-center gap-1">
+              <div className="w-5 h-5 rounded-full bg-[#637CFF] flex items-center justify-center text-[10px] text-white font-medium">
+                {task.assignees[0].user.userName.charAt(0)}
               </div>
-            )}
-          </div>
-          {task.plannedDate && (
-            <span className="text-[11px] text-[#7E8485] flex items-center gap-1">
-              <Calendar size={11} />
-              {new Date(task.plannedDate).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}
-            </span>
+              {task.assignees.length > 1 && (
+                <span className="text-[10px] text-[#7E8485]">+{task.assignees.length - 1}</span>
+              )}
+            </div>
           )}
         </div>
+        {task.plannedDate && (
+          <span className="text-[11px] text-[#7E8485] flex items-center gap-1">
+            <Calendar size={11} />
+            {new Date(task.plannedDate).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}
+          </span>
+        )}
       </div>
-    </Link>
+    </div>
   );
 
   // 象限列 - 灰色背景
@@ -266,7 +269,7 @@ export default function PriorityPage() {
         
         {/* 任务列表 - 灰色背景 */}
         <div className="flex-1 bg-[#F4F7F6] rounded-2xl p-3 overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-6 min-h-0">
             {quadrant.tasks.length === 0 ? (
               <div className="text-center py-8 text-[#7E8485]">
                 <Icon size={24} className="mx-auto mb-2 opacity-30" />
