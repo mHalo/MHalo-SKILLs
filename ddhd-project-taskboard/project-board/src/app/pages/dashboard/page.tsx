@@ -195,16 +195,16 @@ export default function DashboardPage() {
               const progress = project.taskCount > 0 
                 ? Math.round((project.completedTaskCount / project.taskCount) * 100) 
                 : 0;
-              
               return (
                 <Link key={project.id} href={`/projects/${project.id}`}>
                   <Card className="layout-card hover:shadow-card transition-all cursor-pointer group h-full">
-                    <CardContent className="p-4 flex flex-col h-full">
+                    <CardContent className="p-0 flex flex-col h-full">
                       {/* 头部：图标和状态 */}
                       <div className="flex items-start justify-between mb-3">
-                        <div className="w-10 h-10 bg-brand-main rounded-lg flex items-center justify-center">
-                          <FolderOpen size={20} strokeWidth={1.5} className="text-brand-secondary" />
-                        </div>
+                        {/* 项目名称 - 字号加大 */}
+                        <h3 className="font-semibold text-brand-primary transition-colors mb-3 line-clamp-2 text-xl w-4/5">
+                          {project.name}
+                        </h3>
                         <span className={`
                           px-2 py-0.5 rounded-md text-xs font-medium
                           ${project.status === '进行中' ? 'bg-brand-success/10 text-brand-success' : ''}
@@ -215,15 +215,12 @@ export default function DashboardPage() {
                         </span>
                       </div>
 
-                      {/* 项目名称 - 字号加大 */}
-                      <h3 className="font-semibold text-brand-primary group-hover:text-brand-info transition-colors mb-3 line-clamp-1 text-base">
-                        {project.name}
-                      </h3>
+                      
                       
                       {/* 成员头像 - 移动到项目名称下方 */}
                       <div className="flex -space-x-1.5 mb-3">
                         {[1, 2, 3].map((_, i) => (
-                          <Avatar key={i} className="w-6 h-6 border-2 border-white">
+                          <Avatar key={i} className="w-10 h-10 border-2 border-white">
                             <AvatarFallback className="bg-brand-main text-brand-primary text-[10px]">
                               {String.fromCharCode(65 + i)}
                             </AvatarFallback>
@@ -245,7 +242,7 @@ export default function DashboardPage() {
                         </div>
 
                         {/* 底部：客户名称 + 统计信息（人物和里程碑位置互换） */}
-                        <div className="flex items-center justify-between pt-3 border-t border-brand-border">
+                        <div className="flex items-center justify-between ">
                           {/* 客户名称 - 移到底部左侧 */}
                           <p className="text-xs text-brand-secondary">
                             {project.client || "无客户"}

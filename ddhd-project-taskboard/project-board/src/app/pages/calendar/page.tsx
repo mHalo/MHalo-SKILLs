@@ -52,6 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@base-ui/react";
 
 type CalendarView = "day" | "week" | "month";
 
@@ -638,11 +639,12 @@ export default function CalendarPage() {
       {/* 工具栏 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
+          <Button onClick={goToToday}>
+            今天
+          </Button>
+          <Separator orientation="vertical" />
           <Button variant="outline" size="icon" onClick={goToPrevious}>
             <ChevronLeft size={18} />
-          </Button>
-          <Button variant="outline" onClick={goToToday}>
-            今天
           </Button>
           <Button variant="outline" size="icon" onClick={goToNext}>
             <ChevronRight size={18} />

@@ -74,8 +74,14 @@ interface Task {
   title: string;
   status: string;
   priority: string;
-  assignees: { user: { userName: string } }[];
+  assignees: { user: { id: string; userName: string; avatar?: string } }[];
   createdAt: string;
+}
+
+interface Assignee {
+  id: string;
+  userName: string;
+  avatar?: string;
 }
 
 type TaskFilter = "all" | "completed" | "incomplete";
@@ -89,6 +95,8 @@ export default function ProjectDetailPage() {
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreateMilestoneDialogOpen, setIsCreateMilestoneDialogOpen] = useState(false);
+  const [newMilestoneName, setNewMilestoneName] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState("P1");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -138,14 +146,17 @@ export default function ProjectDetailPage() {
   const filteredTasks = useMemo(() => {
     if (!selectedMilestone) return [];
     let tasks = selectedMilestone.tasks || [];
-    
+
     if (taskFilter === "completed") {
       tasks = tasks.filter(t => t.status === "已完成");
     } else if (taskFilter === "incomplete") {
       tasks = tasks.filter(t => t.status !== "已完成");
     }
-    
-    return tasks;
+
+    // 按创建时间倒序排列
+    return [...tasks].sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }, [selectedMilestone, taskFilter]);
 
   const taskProgress = useMemo(() => {
@@ -154,6 +165,22 @@ export default function ProjectDetailPage() {
     const completed = selectedMilestone.tasks?.filter(t => t.status === "已完成").length || 0;
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   }, [selectedMilestone]);
+
+  // 获取项目中所有任务的唯一责任人
+  const allAssignees = useMemo(() => {
+    if (!project?.milestones) return [];
+    const assigneeMap = new Map<string, Assignee>();
+    project.milestones.forEach(milestone => {
+      milestone.tasks?.forEach(task => {
+        task.assignees?.forEach(a => {
+          if (!assigneeMap.has(a.user.id)) {
+            assigneeMap.set(a.user.id, a.user);
+          }
+        });
+      });
+    });
+    return Array.from(assigneeMap.values());
+  }, [project]);
 
   const handleCreateTask = async (taskData: {
     title: string;
@@ -199,6 +226,40 @@ export default function ProjectDetailPage() {
 
   const openCreateDialog = (milestoneId?: string) => {
     setIsCreateDialogOpen(true);
+  };
+
+  const handleCreateMilestone = async () => {
+    if (!newMilestoneName.trim()) {
+      toast.error("请输入里程碑名称");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const res = await fetch("/api/milestones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newMilestoneName.trim(),
+          projectId: project?.id,
+          status: "待开始",
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("里程碑创建成功");
+        setNewMilestoneName("");
+        setIsCreateMilestoneDialogOpen(false);
+        await fetchProject(false);
+      } else {
+        const error = await res.json().catch(() => ({}));
+        toast.error(error.error || "创建里程碑失败");
+      }
+    } catch {
+      toast.error("创建里程碑失败");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDeleteTask = async () => {
@@ -387,40 +448,58 @@ export default function ProjectDetailPage() {
           <div className="mt-4 pt-4 border-t border-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">成员</span>
-                <div className="flex -space-x-1.5">
-                  {project.members?.slice(0, 4).map((member, i) => {
-                    const color = getAvatarColor(member.user.userName);
-                    return (
-                      <div
-                        key={i}
-                        className={cn(
-                          "w-7 h-7 rounded-full border-2 border-background flex items-center justify-center text-[10px]",
-                          color.bg,
-                          color.text
+                <span className="text-xs text-muted-foreground">责任人</span>
+                <div className="flex items-center gap-1">
+                  {allAssignees.length > 0 ? (
+                    <>
+                      <div className="flex -space-x-1.5">
+                        {allAssignees.slice(0, 6).map((assignee) => {
+                          const color = getAvatarColor(assignee.userName);
+                          return (
+                            <div
+                              key={assignee.id}
+                              className={cn(
+                                "w-7 h-7 rounded-full border-2 border-background flex items-center justify-center text-[10px]",
+                                color.bg,
+                                color.text
+                              )}
+                              title={assignee.userName}
+                            >
+                              {getInitials(assignee.userName, 1)}
+                            </div>
+                          );
+                        })}
+                        {allAssignees.length > 6 && (
+                          <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] text-muted-foreground">
+                            +{allAssignees.length - 6}
+                          </div>
                         )}
-                        title={member.user.userName}
-                      >
-                        {getInitials(member.user.userName, 1)}
                       </div>
-                    );
-                  })}
-                  {(project.members?.length || 0) > 4 && (
-                    <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] text-muted-foreground">
-                      +{project.members!.length - 4}
-                    </div>
+                      <span className="text-xs text-muted-foreground ml-1">共 {allAssignees.length} 人</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">暂无责任人</span>
                   )}
                 </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setIsCreateMilestoneDialogOpen(true)}
+              >
+                <Plus size={12} className="mr-1" />
+                添加里程碑
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 flex-1 min-h-0">
-        <div className="lg:col-span-1 flex flex-col gap-2 overflow-auto">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-medium text-muted-foreground">里程碑</h2>
+        <div className="flex flex-col gap-2 overflow-auto bg-white rounded-lg p-2 border-border border shadow-sm h-min">
+          <div className="flex items-center justify-between px-1 py-2">
+            <h2 className="text-md font-bold text-muted-foreground">里程碑</h2>
             <span className="text-xs text-muted-foreground">{project.milestones?.length || 0} 个</span>
           </div>
           
@@ -442,7 +521,7 @@ export default function ProjectDetailPage() {
                     key={milestone.id}
                     onClick={() => setSelectedMilestoneId(milestone.id)}
                     className={cn(
-                      "w-full relative text-left p-3 rounded-lg border-2 transition-all duration-200 bg-white",
+                      "w-full relative text-left p-3 rounded-lg border-2 transition-all duration-200 bg-gray-100/30",
                       isSelected 
                         ? "border-primary bg-primary/10 shadow-sm" 
                         : "border-border hover:border-primary/50 hover:bg-muted/30"
@@ -668,7 +747,6 @@ export default function ProjectDetailPage() {
           ) : (
             <Card className="flex-1 flex items-center justify-center">
               <CardContent className="text-center py-12">
-                <ChevronDown size={32} className="mx-auto mb-3 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">请选择一个里程碑查看任务</p>
               </CardContent>
             </Card>
@@ -730,6 +808,41 @@ export default function ProjectDetailPage() {
               onClick={confirmDialog.type === "delete" ? handleDeleteTask : handleToggleTaskStatus}
             >
               {confirmDialog.type === "delete" ? "删除" : "确认"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 创建里程碑弹窗 */}
+      <Dialog open={isCreateMilestoneDialogOpen} onOpenChange={setIsCreateMilestoneDialogOpen}>
+        <DialogContent className="sm:max-w-sm bg-white">
+          <DialogHeader>
+            <DialogTitle>添加里程碑</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="milestoneName">里程碑名称 *</Label>
+              <Input
+                id="milestoneName"
+                placeholder="输入里程碑名称"
+                value={newMilestoneName}
+                onChange={(e) => setNewMilestoneName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNewMilestoneName("");
+                setIsCreateMilestoneDialogOpen(false);
+              }}
+              disabled={isSubmitting}
+            >
+              取消
+            </Button>
+            <Button onClick={handleCreateMilestone} disabled={isSubmitting}>
+              {isSubmitting ? "创建中..." : "创建"}
             </Button>
           </DialogFooter>
         </DialogContent>

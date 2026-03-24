@@ -125,12 +125,13 @@ export default function ProjectsListPage() {
             return (
               <Link key={project.id} href={`/projects/${project.id}`}>
                 <Card className="layout-card hover:shadow-card transition-all cursor-pointer group h-full flex flex-col">
-                  <CardContent className="p-5 flex flex-col h-full">
+                  <CardContent className="p-0 flex flex-col h-full">
                     {/* 头部：图标和状态 */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 bg-brand-main rounded-lg flex items-center justify-center">
-                        <FolderOpen size={24} strokeWidth={1.5} className="text-brand-secondary" />
-                      </div>
+                    <div className="flex items-start justify-between mb-2">
+                      {/* 项目名称 */}
+                      <h3 className="text-xl w-4/5 font-semibold text-brand-primary line-clamp-2">
+                        {project.name}
+                      </h3>
                       <div className="flex flex-col items-end gap-1.5">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusStyle(project.status)}`}>
                           {project.status}
@@ -143,11 +144,6 @@ export default function ProjectsListPage() {
                         )}
                       </div>
                     </div>
-
-                    {/* 项目名称 */}
-                    <h3 className="text-base font-semibold text-brand-primary group-hover:text-brand-info transition-colors mb-2 line-clamp-1">
-                      {project.name}
-                    </h3>
                     
                     {/* 描述 */}
                     <p className="text-xs text-brand-secondary mb-4 line-clamp-2 flex-1">
@@ -157,7 +153,7 @@ export default function ProjectsListPage() {
                     {/* 参与人员头像 */}
                     <div className="flex -space-x-1.5 mb-4">
                       {[1, 2, 3].map((_, i) => (
-                        <Avatar key={i} className="w-6 h-6 border-2 border-white">
+                        <Avatar key={i} className="w-10 h-10 border-2 border-white">
                           <AvatarFallback className="bg-brand-main text-brand-primary text-[10px]">
                             {String.fromCharCode(65 + i)}
                           </AvatarFallback>
@@ -182,7 +178,7 @@ export default function ProjectsListPage() {
                     </div>
 
                     {/* 底部统计和客户 */}
-                    <div className="pt-4 border-t border-brand-border flex items-center justify-between">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 text-xs text-brand-secondary">
                         <span className="flex items-center gap-1">
                           <CheckCircle2 size={12} strokeWidth={1.5} />
