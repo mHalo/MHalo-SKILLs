@@ -325,14 +325,12 @@ export function CreateTaskDialog({
               <Input
                 type="time"
                 className="w-28"
+                disabled={!plannedDate}
                 value={plannedDate ? format(new Date(plannedDate), "HH:mm") : ""}
                 onChange={(e) => {
                   if (plannedDate) {
                     const datePart = format(new Date(plannedDate), "yyyy-MM-dd");
                     setPlannedDate(datePart + "T" + e.target.value);
-                  } else {
-                    const now = new Date();
-                    setPlannedDate(format(now, "yyyy-MM-dd") + "T" + e.target.value);
                   }
                 }}
               />
