@@ -575,8 +575,16 @@ export default function ProjectDetailPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <h2 className="font-medium text-sm">{selectedMilestone.name}</h2>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedMilestone.tasks?.filter(t => t.status === "已完成").length || 0} / {selectedMilestone.tasks?.length || 0} 任务已完成
+                      <p className="text-xs text-muted-foreground flex items-center gap-2">
+                        <span className="flex items-center gap-1">
+                          <CalendarIcon size={11} />
+                          {selectedMilestone.dueDate
+                            ? new Date(selectedMilestone.dueDate).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })
+                            : "无截止"}
+                        </span>
+                        <span>
+                          {selectedMilestone.tasks?.filter(t => t.status === "已完成").length || 0} / {selectedMilestone.tasks?.length || 0} 任务已完成
+                        </span>
                       </p>
                     </div>
                     <span className="text-lg font-semibold text-primary">{taskProgress}%</span>
