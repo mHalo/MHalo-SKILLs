@@ -33,6 +33,17 @@ interface Task {
   assignees?: { user: { userName: string; avatar?: string } }[];
 }
 
+interface QuadrantData {
+  key: string;
+  title: string;
+  subtitle: string;
+  tasks: Task[];
+  icon: React.ElementType;
+  iconColor: string;
+  bgColor: string;
+  borderColor: string;
+}
+
 export default function PriorityPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,20 +70,58 @@ export default function PriorityPage() {
     }
   };
 
-  // 四象限分类
-  const urgentImportant = tasks.filter((t) => t.priority === "P0");
-  const importantNotUrgent = tasks.filter((t) => t.priority === "P1");
-  const urgentNotImportant = tasks.filter((t) => t.priority === "P2" && t.status === "有风险");
-  const neither = tasks.filter((t) => t.priority === "P2" && t.status !== "有风险");
+  // 四象限数据
+  const quadrants: QuadrantData[] = [
+    {
+      key: "p0",
+      title: "重要且紧急",
+      subtitle: "立即处理",
+      tasks: tasks.filter((t) => t.priority === "P0"),
+      icon: AlertTriangle,
+      iconColor: "text-red-600",
+      bgColor: "bg-red-100",
+      borderColor: "border-l-red-500",
+    },
+    {
+      key: "p1",
+      title: "重要不紧急",
+      subtitle: "计划安排",
+      tasks: tasks.filter((t) => t.priority === "P1"),
+      icon: Flag,
+      iconColor: "text-amber-600",
+      bgColor: "bg-amber-100",
+      borderColor: "border-l-amber-500",
+    },
+    {
+      key: "risk",
+      title: "有风险任务",
+      subtitle: "需要关注",
+      tasks: tasks.filter((t) => t.priority === "P2" && t.status === "有风险"),
+      icon: Clock,
+      iconColor: "text-blue-600",
+      bgColor: "bg-blue-100",
+      borderColor: "border-l-blue-500",
+    },
+    {
+      key: "normal",
+      title: "普通任务",
+      subtitle: "按计划执行",
+      tasks: tasks.filter((t) => t.priority === "P2" && t.status !== "有风险"),
+      icon: CheckCircle2,
+      iconColor: "text-gray-600",
+      bgColor: "bg-gray-100",
+      borderColor: "border-l-gray-300",
+    },
+  ];
 
   const getPriorityStyle = (priority: string) => {
     switch (priority) {
       case "P0":
-        return "bg-red-100 text-red-700 border-red-200";
+        return "bg-red-100 text-red-700";
       case "P1":
-        return "bg-amber-100 text-amber-700 border-amber-200";
+        return "bg-amber-100 text-amber-700";
       case "P2":
-        return "bg-blue-100 text-blue-700 border-blue-200";
+        return "bg-blue-100 text-blue-700";
       default:
         return "bg-muted text-muted-foreground";
     }
@@ -81,144 +130,116 @@ export default function PriorityPage() {
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
       case "P0":
-        return "紧急";
+        return "P0";
       case "P1":
-        return "高";
+        return "P1";
       case "P2":
-        return "中";
+        return "P2";
       default:
-        return "低";
+        return "P3";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "已完成":
-        return <CheckCircle2 size={16} className="text-green-500" />;
+        return <div className="w-2 h-2 rounded-full bg-green-500" />;
       case "进行中":
-        return <Clock size={16} className="text-blue-500" />;
+        return <div className="w-2 h-2 rounded-full bg-blue-500" />;
       case "有风险":
-        return <AlertTriangle size={16} className="text-amber-500" />;
+        return <div className="w-2 h-2 rounded-full bg-amber-500" />;
       default:
-        return <div className="w-2 h-2 bg-gray-400 rounded-full" />;
+        return <div className="w-2 h-2 rounded-full bg-gray-400" />;
     }
   };
 
+  // 紧凑任务卡片
   const TaskCard = ({ task }: { task: Task }) => (
     <Link href={task.milestone ? `/projects/${task.milestone.project.id}` : "#"}>
-      <Card className="hover:shadow-md transition-all cursor-pointer group border-l-4">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5">{getStatusIcon(task.status)}</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="font-medium group-hover:text-primary transition-colors line-clamp-1">
-                  {task.title}
-                </h4>
-                <span
-                  className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded border",
-                    getPriorityStyle(task.priority)
-                  )}
-                >
-                  {getPriorityLabel(task.priority)}
-                </span>
-              </div>
-              
-              {task.milestone && (
-                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Briefcase size={12} />
-                    {task.milestone.project.name}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Flag size={12} />
-                    {task.milestone.name}
-                  </span>
-                </div>
-              )}
+      <div className="group p-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors cursor-pointer border-l-2 border-transparent hover:border-primary">
+        <div className="flex items-start gap-2">
+          <div className="mt-1.5">{getStatusIcon(task.status)}</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                {task.title}
+              </p>
+              <span
+                className={cn(
+                  "text-[10px] px-1 py-0 rounded shrink-0",
+                  getPriorityStyle(task.priority)
+                )}
+              >
+                {getPriorityLabel(task.priority)}
+              </span>
+            </div>
+            
+            {task.milestone && (
+              <p className="text-[11px] text-muted-foreground mt-1 truncate">
+                {task.milestone.project.name} · {task.milestone.name}
+              </p>
+            )}
 
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  {task.plannedDate && (
-                    <span className="flex items-center gap-1">
-                      <Calendar size={12} />
-                      {new Date(task.plannedDate).toLocaleDateString("zh-CN")}
-                    </span>
-                  )}
-                  {task.assignees && task.assignees.length > 0 && (
-                    <span className="flex items-center gap-1">
-                      <User size={12} />
-                      {task.assignees[0].user.userName}
-                      {task.assignees.length > 1 && ` +${task.assignees.length - 1}`}
-                    </span>
-                  )}
-                </div>
-                <ArrowUpRight
-                  size={14}
-                  className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                />
-              </div>
+            <div className="flex items-center gap-2 mt-1.5">
+              {task.plannedDate && (
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Calendar size={10} />
+                  {new Date(task.plannedDate).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
+                </span>
+              )}
+              {task.assignees && task.assignees.length > 0 && (
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <User size={10} />
+                  {task.assignees[0].user.userName}
+                </span>
+              )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 
-  const QuadrantCard = ({
-    title,
-    subtitle,
-    count,
-    tasks,
-    icon: Icon,
-    iconColor,
-    bgColor,
-    borderColor,
-  }: {
-    title: string;
-    subtitle: string;
-    count: number;
-    tasks: Task[];
-    icon: React.ElementType;
-    iconColor: string;
-    bgColor: string;
-    borderColor: string;
-  }) => (
-    <Card className={cn("border-l-4", borderColor)}>
-      <CardContent className="p-5">
-        <div className="flex items-center gap-3 mb-4">
-          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", bgColor)}>
-            <Icon size={20} className={iconColor} />
-          </div>
-          <div>
-            <h3 className="font-semibold">{title}</h3>
-            <p className="text-xs text-muted-foreground">
-              {subtitle} · {count}个任务
-            </p>
+  // 象限卡片（紧凑版）
+  const QuadrantColumn = ({ quadrant }: { quadrant: QuadrantData }) => {
+    const Icon = quadrant.icon;
+    return (
+      <div className="w-72 shrink-0 flex flex-col">
+        {/* 头部 */}
+        <div className={cn("p-3 rounded-t-lg border-l-4", quadrant.borderColor, quadrant.bgColor)}>
+          <div className="flex items-center gap-2">
+            <Icon size={16} className={quadrant.iconColor} />
+            <div>
+              <h3 className="text-sm font-semibold">{quadrant.title}</h3>
+              <p className="text-[10px] text-muted-foreground">
+                {quadrant.subtitle} · {quadrant.tasks.length}个
+              </p>
+            </div>
           </div>
         </div>
-        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-          {tasks.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
-              <CheckCircle2 size={32} className="mx-auto mb-2 text-green-500" />
-              <p className="text-sm">暂无任务</p>
+        
+        {/* 任务列表 */}
+        <div className="flex-1 bg-card border border-t-0 rounded-b-lg p-2 space-y-2 min-h-[300px] max-h-[calc(100vh-280px)] overflow-y-auto">
+          {quadrant.tasks.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <CheckCircle2 size={20} className="mx-auto mb-1 text-green-500" />
+              <p className="text-xs">暂无任务</p>
             </div>
           ) : (
-            tasks.map((task) => <TaskCard key={task.id} task={task} />)
+            quadrant.tasks.map((task) => <TaskCard key={task.id} task={task} />)
           )}
         </div>
-      </CardContent>
-    </Card>
-  );
+      </div>
+    );
+  };
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex gap-4 overflow-hidden">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-80 rounded-lg" />
+            <Skeleton key={i} className="w-72 h-96 shrink-0 rounded-lg" />
           ))}
         </div>
       </div>
@@ -226,55 +247,22 @@ export default function PriorityPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-4 h-full flex flex-col">
+      {/* 头部 */}
+      <div className="shrink-0">
         <h1 className="text-2xl font-bold tracking-tight">关键任务看板</h1>
         <p className="text-sm text-muted-foreground mt-1">
           按紧急重要程度管理任务优先级 · 共 {tasks.length} 个未完成任务
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <QuadrantCard
-          title="重要且紧急"
-          subtitle="立即处理"
-          count={urgentImportant.length}
-          tasks={urgentImportant}
-          icon={AlertTriangle}
-          iconColor="text-red-600"
-          bgColor="bg-red-100"
-          borderColor="border-l-red-500"
-        />
-        <QuadrantCard
-          title="重要不紧急"
-          subtitle="计划安排"
-          count={importantNotUrgent.length}
-          tasks={importantNotUrgent}
-          icon={Flag}
-          iconColor="text-amber-600"
-          bgColor="bg-amber-100"
-          borderColor="border-l-amber-500"
-        />
-        <QuadrantCard
-          title="有风险任务"
-          subtitle="需要关注"
-          count={urgentNotImportant.length}
-          tasks={urgentNotImportant}
-          icon={Clock}
-          iconColor="text-blue-600"
-          bgColor="bg-blue-100"
-          borderColor="border-l-blue-500"
-        />
-        <QuadrantCard
-          title="普通任务"
-          subtitle="按计划执行"
-          count={neither.length}
-          tasks={neither}
-          icon={CheckCircle2}
-          iconColor="text-gray-600"
-          bgColor="bg-gray-100"
-          borderColor="border-l-gray-300"
-        />
+      {/* 横向滚动的四象限 */}
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden pb-2">
+        <div className="flex gap-4 h-full">
+          {quadrants.map((quadrant) => (
+            <QuadrantColumn key={quadrant.key} quadrant={quadrant} />
+          ))}
+        </div>
       </div>
     </div>
   );
