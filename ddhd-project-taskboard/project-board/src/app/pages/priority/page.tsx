@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Clock,
   Flag,
-  ArrowUpRight,
   Briefcase,
   User,
   Calendar,
@@ -16,7 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 
 interface Task {
   id: string;
@@ -39,9 +37,10 @@ interface QuadrantData {
   subtitle: string;
   tasks: Task[];
   icon: React.ElementType;
-  iconColor: string;
+  accentColor: string;
   bgColor: string;
   borderColor: string;
+  lightBg: string;
 }
 
 export default function PriorityPage() {
@@ -70,7 +69,7 @@ export default function PriorityPage() {
     }
   };
 
-  // 四象限数据
+  // 四象限数据配置 - 使用品牌色系
   const quadrants: QuadrantData[] = [
     {
       key: "p0",
@@ -78,9 +77,10 @@ export default function PriorityPage() {
       subtitle: "立即处理",
       tasks: tasks.filter((t) => t.priority === "P0"),
       icon: AlertTriangle,
-      iconColor: "text-red-600",
-      bgColor: "bg-red-100",
-      borderColor: "border-l-red-500",
+      accentColor: "text-[#FF6231]",
+      bgColor: "bg-[#FF6231]/10",
+      borderColor: "border-[#FF6231]",
+      lightBg: "bg-[#FF6231]/5",
     },
     {
       key: "p1",
@@ -88,9 +88,10 @@ export default function PriorityPage() {
       subtitle: "计划安排",
       tasks: tasks.filter((t) => t.priority === "P1"),
       icon: Flag,
-      iconColor: "text-amber-600",
-      bgColor: "bg-amber-100",
-      borderColor: "border-l-amber-500",
+      accentColor: "text-[#25B079]",
+      bgColor: "bg-[#25B079]/10",
+      borderColor: "border-[#25B079]",
+      lightBg: "bg-[#25B079]/5",
     },
     {
       key: "risk",
@@ -98,9 +99,10 @@ export default function PriorityPage() {
       subtitle: "需要关注",
       tasks: tasks.filter((t) => t.priority === "P2" && t.status === "有风险"),
       icon: Clock,
-      iconColor: "text-blue-600",
-      bgColor: "bg-blue-100",
-      borderColor: "border-l-blue-500",
+      accentColor: "text-[#637CFF]",
+      bgColor: "bg-[#637CFF]/10",
+      borderColor: "border-[#637CFF]",
+      lightBg: "bg-[#637CFF]/5",
     },
     {
       key: "normal",
@@ -108,88 +110,85 @@ export default function PriorityPage() {
       subtitle: "按计划执行",
       tasks: tasks.filter((t) => t.priority === "P2" && t.status !== "有风险"),
       icon: CheckCircle2,
-      iconColor: "text-gray-600",
-      bgColor: "bg-gray-100",
-      borderColor: "border-l-gray-300",
+      accentColor: "text-[#7E8485]",
+      bgColor: "bg-[#7E8485]/10",
+      borderColor: "border-[#7E8485]",
+      lightBg: "bg-[#7E8485]/5",
     },
   ];
 
-  const getPriorityStyle = (priority: string) => {
+  const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "P0":
-        return "bg-red-100 text-red-700";
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#FF6231]/10 text-[#FF6231]">
+            P0
+          </span>
+        );
       case "P1":
-        return "bg-amber-100 text-amber-700";
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#25B079]/10 text-[#25B079]">
+            P1
+          </span>
+        );
       case "P2":
-        return "bg-blue-100 text-blue-700";
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#637CFF]/10 text-[#637CFF]">
+            P2
+          </span>
+        );
       default:
-        return "bg-muted text-muted-foreground";
+        return (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#E8EDEC] text-[#7E8485]">
+            P3
+          </span>
+        );
     }
   };
 
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case "P0":
-        return "P0";
-      case "P1":
-        return "P1";
-      case "P2":
-        return "P2";
-      default:
-        return "P3";
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
+  const getStatusDot = (status: string) => {
     switch (status) {
-      case "已完成":
-        return <div className="w-2 h-2 rounded-full bg-green-500" />;
       case "进行中":
-        return <div className="w-2 h-2 rounded-full bg-blue-500" />;
+        return <div className="w-2 h-2 rounded-full bg-[#637CFF]" />;
       case "有风险":
-        return <div className="w-2 h-2 rounded-full bg-amber-500" />;
+        return <div className="w-2 h-2 rounded-full bg-[#FF6231]" />;
+      case "待开始":
+        return <div className="w-2 h-2 rounded-full bg-[#7E8485]" />;
       default:
-        return <div className="w-2 h-2 rounded-full bg-gray-400" />;
+        return <div className="w-2 h-2 rounded-full bg-[#E8EDEC]" />;
     }
   };
 
   // 紧凑任务卡片
   const TaskCard = ({ task }: { task: Task }) => (
     <Link href={task.milestone ? `/projects/${task.milestone.project.id}` : "#"}>
-      <div className="group p-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors cursor-pointer border-l-2 border-transparent hover:border-primary">
-        <div className="flex items-start gap-2">
-          <div className="mt-1.5">{getStatusIcon(task.status)}</div>
+      <div className="group p-3 rounded-lg bg-white hover:bg-[#F4F7F6] transition-all cursor-pointer border border-[#E8EDEC] hover:border-[#7E8485]/30 shadow-sm hover:shadow-md">
+        <div className="flex items-start gap-2.5">
+          <div className="mt-1">{getStatusDot(task.status)}</div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+            <div className="flex items-start gap-2">
+              <p className="text-sm font-medium text-[#1A1A1A] truncate group-hover:text-[#637CFF] transition-colors">
                 {task.title}
               </p>
-              <span
-                className={cn(
-                  "text-[10px] px-1 py-0 rounded shrink-0",
-                  getPriorityStyle(task.priority)
-                )}
-              >
-                {getPriorityLabel(task.priority)}
-              </span>
+              {getPriorityBadge(task.priority)}
             </div>
             
             {task.milestone && (
-              <p className="text-[11px] text-muted-foreground mt-1 truncate">
-                {task.milestone.project.name} · {task.milestone.name}
+              <p className="text-xs text-[#7E8485] mt-1.5 truncate">
+                {task.milestone.project.name}
               </p>
             )}
 
-            <div className="flex items-center gap-2 mt-1.5">
+            <div className="flex items-center gap-3 mt-2">
               {task.plannedDate && (
-                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                  <Calendar size={10} />
-                  {new Date(task.plannedDate).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
+                <span className="text-[11px] text-[#7E8485] flex items-center gap-1">
+                  <Calendar size={11} className="text-[#7E8485]" />
+                  {new Date(task.plannedDate).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}
                 </span>
               )}
               {task.assignees && task.assignees.length > 0 && (
-                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                  <User size={10} />
+                <span className="text-[11px] text-[#7E8485] flex items-center gap-1">
+                  <User size={11} className="text-[#7E8485]" />
                   {task.assignees[0].user.userName}
                 </span>
               )}
@@ -200,29 +199,35 @@ export default function PriorityPage() {
     </Link>
   );
 
-  // 象限卡片（紧凑版）
+  // 象限列
   const QuadrantColumn = ({ quadrant }: { quadrant: QuadrantData }) => {
     const Icon = quadrant.icon;
     return (
       <div className="w-72 shrink-0 flex flex-col">
-        {/* 头部 */}
-        <div className={cn("p-3 rounded-t-lg border-l-4", quadrant.borderColor, quadrant.bgColor)}>
-          <div className="flex items-center gap-2">
-            <Icon size={16} className={quadrant.iconColor} />
-            <div>
-              <h3 className="text-sm font-semibold">{quadrant.title}</h3>
-              <p className="text-[10px] text-muted-foreground">
-                {quadrant.subtitle} · {quadrant.tasks.length}个
-              </p>
+        {/* 头部 - 使用卡片样式 */}
+        <Card className={cn("mb-3 border-l-4", quadrant.borderColor)}>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", quadrant.bgColor)}>
+                <Icon size={18} className={quadrant.accentColor} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[#1A1A1A]">{quadrant.title}</h3>
+                <p className="text-xs text-[#7E8485]">
+                  {quadrant.subtitle} · <span className={cn("font-medium", quadrant.accentColor)}>{quadrant.tasks.length}个</span>
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
         
         {/* 任务列表 */}
-        <div className="flex-1 bg-card border border-t-0 rounded-b-lg p-2 space-y-2 min-h-[300px] max-h-[calc(100vh-280px)] overflow-y-auto">
+        <div className="flex-1 space-y-2 min-h-[300px] max-h-[calc(100vh-260px)] overflow-y-auto pr-1">
           {quadrant.tasks.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
-              <CheckCircle2 size={20} className="mx-auto mb-1 text-green-500" />
+            <div className="text-center py-8 text-[#7E8485]">
+              <div className={cn("w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center", quadrant.lightBg)}>
+                <Icon size={18} className={quadrant.accentColor} />
+              </div>
               <p className="text-xs">暂无任务</p>
             </div>
           ) : (
@@ -250,9 +255,9 @@ export default function PriorityPage() {
     <div className="space-y-4 h-full flex flex-col">
       {/* 头部 */}
       <div className="shrink-0">
-        <h1 className="text-2xl font-bold tracking-tight">关键任务看板</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          按紧急重要程度管理任务优先级 · 共 {tasks.length} 个未完成任务
+        <h1 className="text-xl font-semibold text-[#1A1A1A]">关键任务看板</h1>
+        <p className="text-sm text-[#7E8485] mt-0.5">
+          共 <span className="font-medium text-[#1A1A1A]">{tasks.length}</span> 个未完成任务
         </p>
       </div>
 
