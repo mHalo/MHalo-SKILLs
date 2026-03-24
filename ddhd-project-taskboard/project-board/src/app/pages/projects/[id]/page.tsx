@@ -46,6 +46,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
+import { CreateTaskDialog } from "@/components/task/create-task-dialog";
 
 interface Project {
   id: string;
@@ -88,8 +89,6 @@ export default function ProjectDetailPage() {
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newTaskMilestoneId, setNewTaskMilestoneId] = useState<string>("");
-  const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState("P1");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -156,12 +155,15 @@ export default function ProjectDetailPage() {
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   }, [selectedMilestone]);
 
-  const handleCreateTask = async () => {
-    if (!newTaskTitle.trim()) {
-      toast.error("请输入任务名称");
-      return;
-    }
-    if (!newTaskMilestoneId) {
+  const handleCreateTask = async (taskData: {
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeId?: string;
+    milestoneId?: string;
+  }) => {
+    if (!taskData.milestoneId) {
       toast.error("请选择里程碑");
       return;
     }
@@ -172,18 +174,17 @@ export default function ProjectDetailPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: newTaskTitle,
-          milestoneId: newTaskMilestoneId,
-          priority: newTaskPriority,
+          title: taskData.title,
+          description: taskData.description,
+          milestoneId: taskData.milestoneId,
+          priority: taskData.priority,
           status: "待开始",
+          plannedDate: taskData.plannedDate,
         }),
       });
 
       if (res.ok) {
         toast.success("任务创建成功");
-        setIsCreateDialogOpen(false);
-        setNewTaskTitle("");
-        setNewTaskPriority("P1");
         await fetchProject(false);
       } else {
         const error = await res.json().catch(() => ({}));
@@ -197,11 +198,6 @@ export default function ProjectDetailPage() {
   };
 
   const openCreateDialog = (milestoneId?: string) => {
-    if (milestoneId) {
-      setNewTaskMilestoneId(milestoneId);
-    } else if (selectedMilestoneId) {
-      setNewTaskMilestoneId(selectedMilestoneId);
-    }
     setIsCreateDialogOpen(true);
   };
 
@@ -678,72 +674,15 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>创建新任务</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="milestone">所属里程碑</Label>
-              <Select 
-                value={newTaskMilestoneId || undefined}
-                onValueChange={(v) => setNewTaskMilestoneId(v || "")}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择里程碑">
-                    {newTaskMilestoneId && project?.milestones?.find(m => m.id === newTaskMilestoneId)?.name}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {project.milestones?.map((milestone) => (
-                    <SelectItem key={milestone.id} value={milestone.id}>
-                      {milestone.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="title">任务名称</Label>
-              <Input
-                id="title"
-                placeholder="输入任务名称"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="priority">优先级</Label>
-              <Select value={newTaskPriority} onValueChange={(v) => setNewTaskPriority(v || "P1")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="P0">P0 - 紧急</SelectItem>
-                  <SelectItem value="P1">P1 - 高</SelectItem>
-                  <SelectItem value="P2">P2 - 中</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsCreateDialogOpen(false)}
-              disabled={isSubmitting}
-            >
-              取消
-            </Button>
-            <Button 
-              onClick={handleCreateTask}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "创建中..." : "创建"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateTaskDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateTask}
+        milestones={project?.milestones || []}
+        defaultPriority={newTaskPriority}
+        defaultMilestoneId={selectedMilestoneId}
+        submitText="创建"
+      />
 
       <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}>
         <DialogContent className={cn("sm:max-w-sm", confirmDialog.type === "toggle" && confirmDialog.newStatus === "已完成" && "sm:max-w-md")}>

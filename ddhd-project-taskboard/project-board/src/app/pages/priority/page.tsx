@@ -18,24 +18,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
+import { CreateTaskDialog } from "@/components/task/create-task-dialog";
 
 interface Task {
   id: string;
@@ -57,13 +46,6 @@ interface Project {
   name: string;
 }
 
-interface User {
-  id: string;
-  userName: string;
-  role: string;
-  avatar?: string;
-}
-
 interface QuadrantData {
   key: string;
   title: string;
@@ -83,22 +65,11 @@ export default function PriorityPage() {
   const [selectedQuadrant, setSelectedQuadrant] = useState<string>("");
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("uncompleted");
-  const [assigneeUsers, setAssigneeUsers] = useState<User[]>([]);
-  const [selectedAssignee, setSelectedAssignee] = useState<string>("");
-  const [assigneeSearch, setAssigneeSearch] = useState<string>("");
-  const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
-  const [newTask, setNewTask] = useState({
-    title: "",
-    description: "",
-    priority: "P1",
-    status: "待开始",
-    plannedDate: "",
-  });
+  const [newTaskPriority, setNewTaskPriority] = useState<string>("P1");
 
   useEffect(() => {
     fetchTasks();
     fetchProjects();
-    fetchAssignees();
   }, []);
 
   const fetchTasks = async () => {
@@ -128,32 +99,17 @@ export default function PriorityPage() {
     }
   };
 
-  const fetchAssignees = async () => {
-    try {
-      const res = await fetch("/api/users");
-      const data = await res.json();
-      if (data.data) {
-        setAssigneeUsers(data.data);
-      }
-    } catch {
-      toast.error("获取用户列表失败");
-    }
-  };
-
-  const filteredAssignees = assigneeUsers.filter((user) =>
-    user.userName.toLowerCase().includes(assigneeSearch.toLowerCase())
-  );
-
-  const handleCreateTask = async () => {
-    if (!newTask.title.trim()) {
-      toast.error("请输入任务名称");
-      return;
-    }
-
+  const handleCreateTask = async (taskData: {
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeId?: string;
+  }) => {
     // 根据象限设置优先级和状态
-    let priority = newTask.priority;
-    let status = newTask.status;
-    
+    let priority = taskData.priority;
+    let status = "待开始";
+
     switch (selectedQuadrant) {
       case "p0":
         priority = "P0";
@@ -172,15 +128,21 @@ export default function PriorityPage() {
     }
 
     toast.success(`任务将创建在「${selectedQuadrant}」象限 (P:${priority}, S:${status})`);
-    setIsCreateDialogOpen(false);
-    setNewTask({ title: "", description: "", priority: "P1", status: "待开始", plannedDate: "" });
-    setSelectedAssignee("");
   };
 
   const openCreateDialog = (quadrantKey: string) => {
     setSelectedQuadrant(quadrantKey);
-    setNewTask({ title: "", description: "", priority: "P1", status: "待开始", plannedDate: "" });
-    setSelectedAssignee("");
+    // 根据象限设置默认优先级
+    switch (quadrantKey) {
+      case "p0":
+        setNewTaskPriority("P0");
+        break;
+      case "p1":
+        setNewTaskPriority("P1");
+        break;
+      default:
+        setNewTaskPriority("P1");
+    }
     setIsCreateDialogOpen(true);
   };
 
@@ -439,127 +401,13 @@ export default function PriorityPage() {
       </div>
 
       {/* 创建任务弹窗 */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle>添加任务</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>任务名称</Label>
-              <Input
-                placeholder="输入任务名称"
-                value={newTask.title}
-                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>任务说明</Label>
-              <Textarea
-                placeholder="输入任务说明（可选）"
-                value={newTask.description || ""}
-                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>优先级</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant={newTask.priority === "P0" ? "default" : "outline"}
-                  size="sm"
-                  className={newTask.priority === "P0" ? "bg-[#FF6231] hover:bg-[#FF6231]/90" : ""}
-                  onClick={() => setNewTask({ ...newTask, priority: "P0" })}
-                >
-                  P0
-                </Button>
-                <Button
-                  variant={newTask.priority === "P1" ? "default" : "outline"}
-                  size="sm"
-                  className={newTask.priority === "P1" ? "bg-[#25B079] hover:bg-[#25B079]/90" : ""}
-                  onClick={() => setNewTask({ ...newTask, priority: "P1" })}
-                >
-                  P1
-                </Button>
-                <Button
-                  variant={newTask.priority === "P2" ? "default" : "outline"}
-                  size="sm"
-                  className={newTask.priority === "P2" ? "bg-[#637CFF] hover:bg-[#637CFF]/90" : ""}
-                  onClick={() => setNewTask({ ...newTask, priority: "P2" })}
-                >
-                  P2
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>责任人</Label>
-              <Popover open={assigneePopoverOpen} onOpenChange={setAssigneePopoverOpen}>
-                <PopoverTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-start text-left font-normal"
-                    />
-                  }
-                >
-                  {selectedAssignee ? assigneeUsers.find(u => u.id === selectedAssignee)?.userName : "选择责任人（可选）"}
-                </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0" align="start">
-                  <Input
-                    placeholder="搜索责任人..."
-                    value={assigneeSearch}
-                    onChange={(e) => setAssigneeSearch(e.target.value)}
-                    className="border-0 border-b rounded-none"
-                  />
-                  <ScrollArea className="max-h-[200px]">
-                    <div className="p-1">
-                      {filteredAssignees.length === 0 ? (
-                        <p className="py-2 px-2 text-sm text-muted-foreground">未找到责任人</p>
-                      ) : (
-                        filteredAssignees.map((user) => (
-                          <div
-                            key={user.id}
-                            className={cn(
-                              "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
-                              selectedAssignee === user.id && "bg-accent"
-                            )}
-                            onClick={() => {
-                              setSelectedAssignee(user.id);
-                              setAssigneePopoverOpen(false);
-                              setAssigneeSearch("");
-                            }}
-                          >
-                            <div className="w-6 h-6 rounded-full bg-[#637CFF] flex items-center justify-center text-white text-xs font-medium">
-                              {user.userName.charAt(0)}
-                            </div>
-                            <span className="text-sm">{user.userName}</span>
-                            <span className="text-xs text-muted-foreground ml-auto">{user.role}</span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
-              <Label>计划日期</Label>
-              <Input
-                type="date"
-                value={newTask.plannedDate}
-                onChange={(e) => setNewTask({ ...newTask, plannedDate: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleCreateTask}>创建</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateTaskDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateTask}
+        defaultPriority={newTaskPriority}
+        submitText="创建"
+      />
     </div>
   );
 }
