@@ -286,34 +286,57 @@ export function CreateTaskDialog({
             </Popover>
           </div>
 
-          {/* 计划日期 */}
+          {/* 计划完成节点 */}
           <div className="space-y-2">
-            <Label>计划日期</Label>
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-start text-left font-normal"
+            <Label>计划完成节点</Label>
+            <div className="flex gap-2">
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="flex-1 justify-start text-left font-normal"
+                    />
+                  }
+                >
+                  {plannedDate ? (
+                    format(new Date(plannedDate), "yyyy-MM-dd")
+                  ) : (
+                    <span className="text-muted-foreground">选择日期</span>
+                  )}
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={plannedDate ? new Date(plannedDate) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        const currentTime = plannedDate ? format(new Date(plannedDate), "HH:mm") : "18:00";
+                        setPlannedDate(format(date, "yyyy-MM-dd") + "T" + currentTime);
+                      } else {
+                        setPlannedDate("");
+                      }
+                    }}
+                    initialFocus
                   />
-                }
-              >
-                {plannedDate ? (
-                  format(new Date(plannedDate), "yyyy-MM-dd")
-                ) : (
-                  <span className="text-muted-foreground">选择日期（可选）</span>
-                )}
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={plannedDate ? new Date(plannedDate) : undefined}
-                  onSelect={(date) => setPlannedDate(date ? format(date, "yyyy-MM-dd") : "")}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+              <Input
+                type="time"
+                className="w-28"
+                value={plannedDate ? format(new Date(plannedDate), "HH:mm") : ""}
+                onChange={(e) => {
+                  if (plannedDate) {
+                    const datePart = format(new Date(plannedDate), "yyyy-MM-dd");
+                    setPlannedDate(datePart + "T" + e.target.value);
+                  } else {
+                    const now = new Date();
+                    setPlannedDate(format(now, "yyyy-MM-dd") + "T" + e.target.value);
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
 
