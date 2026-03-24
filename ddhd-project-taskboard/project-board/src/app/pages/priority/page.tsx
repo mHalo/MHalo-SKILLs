@@ -266,7 +266,7 @@ export default function PriorityPage() {
         
         {/* 任务列表 - 灰色背景 */}
         <div className="flex-1 bg-[#F4F7F6] rounded-2xl p-3 overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
             {quadrant.tasks.length === 0 ? (
               <div className="text-center py-8 text-[#7E8485]">
                 <Icon size={24} className="mx-auto mb-2 opacity-30" />
