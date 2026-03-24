@@ -85,6 +85,7 @@ export async function PUT(
       email,
       phone,
       status,
+      openId,
     } = body;
 
     // 先找到用户
@@ -112,6 +113,7 @@ export async function PUT(
         email,
         phone,
         status,
+        openId,
       },
     });
 

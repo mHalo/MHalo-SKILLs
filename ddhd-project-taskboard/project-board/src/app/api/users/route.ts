@@ -52,9 +52,12 @@ export async function POST(request: NextRequest) {
       phone,
     } = body;
 
+    // 如果没有提供 userId，自动生成一个
+    const finalUserId = userId || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     // 检查 userId 是否已存在
     const existingUser = await prisma.user.findUnique({
-      where: { userId },
+      where: { userId: finalUserId },
     });
     if (existingUser) {
       return NextResponse.json(
@@ -78,13 +81,13 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.create({
       data: {
-        userId,
-        openId,
+        userId: finalUserId,
+        openId: openId || null,
         userName,
-        avatar,
-        role,
-        email,
-        phone,
+        avatar: avatar || null,
+        role: role || "",
+        email: email || null,
+        phone: phone || null,
       },
     });
 

@@ -3,14 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import {
-  Briefcase,
   CheckCircle2,
-  Clock,
-  AlertCircle,
   ChevronRight,
-  Flag,
-  Calendar,
   Pencil,
+  Plus,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -25,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ImageCropDialog } from "@/components/image-crop-dialog";
-import { TaskDetailDialog, TaskDetail } from "@/components/task/task-detail-dialog";
+import { TaskDetailDialog } from "@/components/task/task-detail-dialog";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
@@ -37,6 +34,7 @@ interface User {
   avatarColorBg?: string;
   avatarColorText?: string;
   role: string;
+  openId?: string;
   _count?: {
     assignees: number;
   };
@@ -90,6 +88,12 @@ export default function PeoplePage() {
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string>("");
   const [editingUser, setEditingUser] = useState<UserDetail | null>(null);
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [createUserForm, setCreateUserForm] = useState({
+    userName: "",
+    role: "",
+    openId: "",
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState({
     userName: "",
@@ -98,6 +102,7 @@ export default function PeoplePage() {
     useColorAvatar: false,
     colorBg: "bg-blue-500",
     colorText: "text-white",
+    openId: "",
   });
 
   useEffect(() => {
@@ -144,6 +149,7 @@ export default function PeoplePage() {
       useColorAvatar: !user.avatar,
       colorBg: user.avatarColorBg || "bg-blue-500",
       colorText: user.avatarColorText || "text-white",
+      openId: user.openId || "",
     });
     setIsUserEditOpen(true);
   };
@@ -175,6 +181,7 @@ export default function PeoplePage() {
       const updateData: Record<string, string | undefined> = {
         userName: editForm.userName,
         role: editForm.role,
+        openId: editForm.openId,
       };
 
       // 如果使用颜色头像，保存颜色信息；否则保存头像URL
@@ -203,6 +210,36 @@ export default function PeoplePage() {
       }
     } catch {
       toast.error("更新用户信息失败");
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!createUserForm.userName.trim()) {
+      toast.error("请输入姓名");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userName: createUserForm.userName.trim(),
+          role: createUserForm.role.trim() || undefined,
+          openId: createUserForm.openId.trim() || undefined,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("用户创建成功");
+        setIsCreateUserOpen(false);
+        setCreateUserForm({ userName: "", role: "", openId: "" });
+        fetchUsers();
+      } else {
+        toast.error("创建用户失败");
+      }
+    } catch {
+      toast.error("创建用户失败");
     }
   };
 
@@ -257,41 +294,6 @@ export default function PeoplePage() {
 
 
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case "P0":
-        return (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">
-            紧急重要
-          </span>
-        );
-      case "P1":
-        return (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 font-medium">
-            紧急不重要
-          </span>
-        );
-      case "P2":
-        return (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
-            重要不紧急
-          </span>
-        );
-      case "P3":
-        return (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
-            不重要不紧急
-          </span>
-        );
-      default:
-        return (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
-            低
-          </span>
-        );
-    }
-  };
-
   const getPriorityDot = (priority: string) => {
     switch (priority) {
       case "P0":
@@ -330,6 +332,10 @@ export default function PeoplePage() {
             查看团队成员的任务分配情况
           </p>
         </div>
+        <Button onClick={() => setIsCreateUserOpen(true)} className="cursor-pointer">
+          <Plus className="w-4 h-4 mr-1" />
+          添加人员
+        </Button>
       </div>
 
       {/* 人员卡片网格 */}
@@ -452,7 +458,7 @@ export default function PeoplePage() {
                               </span>
                               <Link
                                 href={`/projects/${task.milestone?.project?.id}`}
-                                className="text-[10px] text-muted-foreground  truncate block"
+                                className="text-[10px] text-muted-foreground truncate block"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {task.milestone?.project?.name}
@@ -485,7 +491,7 @@ export default function PeoplePage() {
 
       {/* 用户编辑弹窗 */}
       <Dialog open={isUserEditOpen} onOpenChange={setIsUserEditOpen}>
-        <DialogContent className="sm:max-w-xl z-60">
+        <DialogContent className="sm:max-w-lg z-60">
           <DialogHeader>
             <DialogTitle>编辑用户信息</DialogTitle>
           </DialogHeader>
@@ -551,9 +557,20 @@ export default function PeoplePage() {
               />
             </div>
 
-            {/* 选择背景色 */}
+            {/* OpenID */}
             <div className="space-y-2">
-              <Label>选择背景色</Label>
+              <Label htmlFor="openId">OpenID</Label>
+              <Input
+                id="openId"
+                value={editForm.openId}
+                onChange={(e) => setEditForm({ ...editForm, openId: e.target.value })}
+                placeholder="请输入第三方OpenID"
+              />
+            </div>
+
+            {/* 选择头像 */}
+            <div className="space-y-2">
+              <Label>选择头像</Label>
               <div className="flex flex-wrap gap-2">
                 {avatarColorOptions.map((color) => (
                   <button
@@ -566,28 +583,53 @@ export default function PeoplePage() {
                       colorText: color.text,
                     })}
                     className={cn(
-                      "w-8 h-8 text-xs rounded-lg flex items-center justify-center transition-all",
+                      "w-10 h-10 text-xs rounded-lg flex items-center justify-center transition-all",
                       color.bg,
                       color.text,
-                      editForm.colorBg === color.bg && "ring-2 ring-offset-2 ring-primary"
+                      editForm.useColorAvatar && editForm.colorBg === color.bg && "ring-2 ring-offset-2 ring-primary"
                     )}
                     title={color.name}
                   >
                     {getInitials(editForm.userName)}
                   </button>
                 ))}
+                {/* 已上传的头像 */}
+                {editForm.avatar && (
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({
+                      ...editForm,
+                      useColorAvatar: false,
+                    })}
+                    className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden transition-all",
+                      !editForm.useColorAvatar && "ring-2 ring-offset-2 ring-primary"
+                    )}
+                    title="已上传的头像"
+                  >
+                    <Image
+                      src={editForm.avatar}
+                      alt="已上传的头像"
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                )}
               </div>
             </div>
           </div>
-          {/* 底部按钮 */}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsUserEditOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleSaveUser}>
-              保存
-            </Button>
-          </div>
+          <DialogFooter>
+            {/* 底部按钮 */}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsUserEditOpen(false)}>
+                取消
+              </Button>
+              <Button onClick={handleSaveUser}>
+                保存
+              </Button>
+            </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -598,6 +640,52 @@ export default function PeoplePage() {
         onCropComplete={handleCropComplete}
         initialImageSrc={cropImageSrc}
       />
+
+      {/* 创建用户弹窗 */}
+      <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>添加人员</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="createUserName">姓名 *</Label>
+              <Input
+                id="createUserName"
+                value={createUserForm.userName}
+                onChange={(e) => setCreateUserForm({ ...createUserForm, userName: e.target.value })}
+                placeholder="请输入姓名"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="createUserRole">角色</Label>
+              <Input
+                id="createUserRole"
+                value={createUserForm.role}
+                onChange={(e) => setCreateUserForm({ ...createUserForm, role: e.target.value })}
+                placeholder="请输入角色（如：技术虾、策划虾）"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="createUserOpenId">OpenID</Label>
+              <Input
+                id="createUserOpenId"
+                value={createUserForm.openId}
+                onChange={(e) => setCreateUserForm({ ...createUserForm, openId: e.target.value })}
+                placeholder="请输入第三方OpenID"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateUserOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleCreateUser}>
+              创建
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

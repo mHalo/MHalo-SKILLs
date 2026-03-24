@@ -5,12 +5,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Briefcase, Clock, User } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
+import { toast } from "sonner";
 
 interface TaskAssignee {
   user: {
@@ -43,6 +46,7 @@ interface TaskDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task: TaskDetail | null;
+  onStatusChange?: () => void;
 }
 
 const priorityLabels: Record<string, string> = {
@@ -56,8 +60,29 @@ export function TaskDetailDialog({
   open,
   onOpenChange,
   task,
+  onStatusChange,
 }: TaskDetailDialogProps) {
   if (!task) return null;
+
+  const handleStatusToggle = async () => {
+    const newStatus = task.status === "已完成" ? "待开始" : "已完成";
+    try {
+      const res = await fetch(`/api/tasks/${task.id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        toast.success(`任务已更新为"${newStatus}"`);
+        onStatusChange?.();
+        onOpenChange(false);
+      } else {
+        toast.error("更新任务状态失败");
+      }
+    } catch {
+      toast.error("更新任务状态失败");
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -65,8 +90,7 @@ export function TaskDetailDialog({
         <DialogHeader>
           <DialogTitle className="text-lg">{task.title}</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 pb-4">
           {/* 优先级和状态 */}
           <div className="flex items-center gap-3">
             <span
@@ -194,6 +218,17 @@ export function TaskDetailDialog({
             </div>
           )}
         </div>
+        <DialogFooter className="pt-4">
+          <Button
+            onClick={handleStatusToggle}
+            className={cn(
+              task.status === "已完成" ? "bg-amber-800 hover:bg-amber-600" : "bg-primary/90 hover:bg-primary",
+              "cursor-pointer"
+            )}
+          >
+            {task.status === "已完成" ? "标记为未完成" : "标记为已完成"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

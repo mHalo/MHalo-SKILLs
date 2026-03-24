@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +41,7 @@ interface CreateTaskDialogProps {
     plannedDate?: string;
     assigneeIds?: string[];
     milestoneId?: string;
+    status?: string;
   }) => Promise<void> | void;
   milestones?: Milestone[];
   defaultPriority?: string;
@@ -55,6 +55,7 @@ interface CreateTaskDialogProps {
     plannedDate?: string;
     assigneeIds?: string[];
     milestoneId?: string;
+    status?: string;
   };
 }
 
@@ -78,6 +79,7 @@ export function CreateTaskDialog({
   const [assigneeSearch, setAssigneeSearch] = useState<string>("");
   const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState(editingTask?.status || "待开始");
 
   // 获取用户列表
   useEffect(() => {
@@ -107,6 +109,7 @@ export function CreateTaskDialog({
         setPlannedDate(editingTask.plannedDate || "");
         setMilestoneId(editingTask.milestoneId || defaultMilestoneId);
         setSelectedAssignees(editingTask.assigneeIds || []);
+        setStatus(editingTask.status || "待开始");
       } else {
         setTitle("");
         setDescription("");
@@ -114,6 +117,7 @@ export function CreateTaskDialog({
         setPlannedDate("");
         setMilestoneId(defaultMilestoneId);
         setSelectedAssignees([]);
+        setStatus("待开始");
       }
       setAssigneeSearch("");
     }
@@ -134,6 +138,7 @@ export function CreateTaskDialog({
         plannedDate: plannedDate || undefined,
         assigneeIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
         milestoneId: milestoneId || undefined,
+        status,
       });
       onOpenChange(false);
     } catch {
@@ -413,7 +418,7 @@ export function CreateTaskDialog({
                 type="time"
                 step="1"
                 defaultValue="12:00:00"
-                className="w-28"
+                className="w-32"
                 disabled={!plannedDate}
                 value={plannedDate ? format(new Date(plannedDate), "HH:mm:ss") : ""}
                 onChange={(e) => {
@@ -423,6 +428,61 @@ export function CreateTaskDialog({
                   }
                 }}
               />
+            </div>
+          </div>
+
+          {/* 任务状态 */}
+          <div className="space-y-2">
+            <Label>任务状态</Label>
+            <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E8EDEC] p-0.5">
+              <button
+                type="button"
+                className={cn(
+                  "px-3 py-2 text-xs rounded-md transition-all cursor-pointer flex-1",
+                  status === "待开始"
+                    ? "bg-[#637CFF] text-white"
+                    : "text-[#7E8485] hover:bg-gray-50"
+                )}
+                onClick={() => setStatus("待开始")}
+              >
+                待开始
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "px-3 py-2 text-xs rounded-md transition-all cursor-pointer flex-1",
+                  status === "进行中"
+                    ? "bg-[#637CFF] text-white"
+                    : "text-[#7E8485] hover:bg-gray-50"
+                )}
+                onClick={() => setStatus("进行中")}
+              >
+                进行中
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "px-3 py-2 text-xs rounded-md transition-all cursor-pointer flex-1",
+                  status === "有风险"
+                    ? "bg-[#FF6231] text-white"
+                    : "text-[#7E8485] hover:bg-gray-50"
+                )}
+                onClick={() => setStatus("有风险")}
+              >
+                有风险
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "px-3 py-2 text-xs rounded-md transition-all cursor-pointer flex-1",
+                  status === "已完成"
+                    ? "bg-[#25B079] text-white"
+                    : "text-[#7E8485] hover:bg-gray-50"
+                )}
+                onClick={() => setStatus("已完成")}
+              >
+                已完成
+              </button>
             </div>
           </div>
         </div>
