@@ -21,7 +21,7 @@ export async function GET(
                 assignees: {
                   include: {
                     user: {
-                      select: { id: true, userId: true, userName: true, avatar: true },
+                      select: { id: true, userId: true, userName: true, avatar: true, role: true },
                     },
                   },
                 },
@@ -46,7 +46,24 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ data: project });
+    // 从任务负责人汇总项目成员
+    const memberMap = new Map<string, { userName: string; avatar: string | null; role: string }>();
+    project.milestones.forEach((m) => {
+      m.tasks.forEach((t) => {
+        t.assignees.forEach((a) => {
+          if (!memberMap.has(a.user.userName)) {
+            memberMap.set(a.user.userName, {
+              userName: a.user.userName,
+              avatar: a.user.avatar,
+              role: a.user.role,
+            });
+          }
+        });
+      });
+    });
+    const members = Array.from(memberMap.values()).map((m) => ({ user: m }));
+
+    return NextResponse.json({ data: { ...project, members } });
   } catch (error) {
     console.error("获取项目详情失败:", error);
     return NextResponse.json(

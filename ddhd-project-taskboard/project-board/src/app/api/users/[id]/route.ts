@@ -16,12 +16,27 @@ export async function GET(
       },
       include: {
         assignedTasks: {
+          where: {
+            task: { milestone: { project: { archived: false } } },
+          },
           include: {
             task: {
               include: {
                 milestone: {
                   include: {
                     project: true,
+                  },
+                },
+                assignees: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        userName: true,
+                        avatar: true,
+                        role: true,
+                      },
+                    },
                   },
                 },
               },
@@ -64,6 +79,8 @@ export async function PUT(
     const {
       userName,
       avatar,
+      avatarColorBg,
+      avatarColorText,
       role,
       email,
       phone,
@@ -89,6 +106,8 @@ export async function PUT(
       data: {
         userName,
         avatar,
+        avatarColorBg,
+        avatarColorText,
         role,
         email,
         phone,

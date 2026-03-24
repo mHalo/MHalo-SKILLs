@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
 
-    const where: Prisma.ProjectWhereInput = {};
+    const where: Prisma.ProjectWhereInput = { archived: false, status: "进行中" };
     if (status) where.status = status;
 
     const projects = await prisma.project.findMany({
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
         milestones: {
           include: {
             tasks: {
-              select: { status: true },
+              select: { status: true, assignees: { include: { user: { select: { userName: true, avatar: true, role: true } } } } },
             },
           },
         },
@@ -85,20 +85,40 @@ export async function GET(request: NextRequest) {
           completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
         },
       },
-      projects: projects.map((p) => ({
-        id: p.id,
-        name: p.name,
-        status: p.status,
-        type: p.type,
-        client: p.client,
-        taskCount: p.milestones.reduce((acc, m) => acc + m.tasks.length, 0),
-        completedTaskCount: p.milestones.reduce(
-          (acc, m) => acc + m.tasks.filter((t) => t.status === "已完成").length,
-          0
-        ),
-        milestoneCount: p.milestones.length,
-        updatedAt: p.updatedAt,
-      })),
+      projects: projects.map((p) => {
+        // 从任务的负责人中汇总项目成员
+        const memberMap = new Map<string, { userName: string; avatar: string | null; role: string }>();
+        p.milestones.forEach((m) => {
+          m.tasks.forEach((t) => {
+            t.assignees.forEach((a) => {
+              if (!memberMap.has(a.user.userName)) {
+                memberMap.set(a.user.userName, {
+                  userName: a.user.userName,
+                  avatar: a.user.avatar,
+                  role: a.user.role,
+                });
+              }
+            });
+          });
+        });
+        const members = Array.from(memberMap.values()).slice(0, 5);
+
+        return {
+          id: p.id,
+          name: p.name,
+          status: p.status,
+          type: p.type,
+          client: p.client,
+          taskCount: p.milestones.reduce((acc, m) => acc + m.tasks.length, 0),
+          completedTaskCount: p.milestones.reduce(
+            (acc, m) => acc + m.tasks.filter((t) => t.status === "已完成").length,
+            0
+          ),
+          milestoneCount: p.milestones.length,
+          members: members.map((m) => ({ user: m })),
+          updatedAt: p.updatedAt,
+        };
+      }),
       upcomingEvents,
     };
 

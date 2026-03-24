@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   FolderOpen,
   Clock,
@@ -15,6 +16,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 
 interface DashboardStats {
   projects: {
@@ -190,7 +193,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {recentProjects.map((project) => {
               const progress = project.taskCount > 0 
                 ? Math.round((project.completedTaskCount / project.taskCount) * 100) 
@@ -202,7 +205,7 @@ export default function DashboardPage() {
                       {/* 头部：图标和状态 */}
                       <div className="flex items-start justify-between mb-3">
                         {/* 项目名称 - 字号加大 */}
-                        <h3 className="font-semibold text-brand-primary transition-colors mb-3 line-clamp-2 text-xl w-4/5">
+                        <h3 className="font-semibold text-brand-primary transition-colors mb-2 line-clamp-1 text-xl w-4/5">
                           {project.name}
                         </h3>
                         <span className={`
@@ -214,18 +217,43 @@ export default function DashboardPage() {
                           {project.status}
                         </span>
                       </div>
-
-                      
                       
                       {/* 成员头像 - 移动到项目名称下方 */}
-                      <div className="flex -space-x-1.5 mb-3">
-                        {[1, 2, 3].map((_, i) => (
-                          <Avatar key={i} className="w-10 h-10 border-2 border-white">
-                            <AvatarFallback className="bg-brand-main text-brand-primary text-[10px]">
-                              {String.fromCharCode(65 + i)}
-                            </AvatarFallback>
-                          </Avatar>
-                        ))}
+                      <div className="flex items-center -space-x-2 mb-2">
+                        {project.members && project.members.length > 0 ? (
+                          <>
+                            {project.members.slice(0, 5).map((member, i) => (
+                              <Avatar key={i} className="w-8 h-8 border-2 border-white ring-2 ring-white">
+                                {member.user.avatar ? (
+                                  <Image
+                                    src={member.user.avatar}
+                                    alt={member.user.userName}
+                                    width={40}
+                                    height={40}
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                ) : (
+                                  <AvatarFallback className={cn(
+                                    "text-[10px] font-medium",
+                                    getAvatarColor(member.user.userName).bg,
+                                    getAvatarColor(member.user.userName).text
+                                  )}>
+                                    {getInitials(member.user.userName)}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                            ))}
+                            {project.members.length > 5 && (
+                              <Avatar className="w-10 h-10 border-2 border-white ring-2 ring-white bg-gray-200">
+                                <AvatarFallback className="bg-gray-300 text-gray-600 text-[10px] font-medium">
+                                  +{project.members.length - 5}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs w-full h-8 flex items-center text-gray-400">暂无成员</span>
+                        )}
                       </div>
 
                       {/* 进度条 */}

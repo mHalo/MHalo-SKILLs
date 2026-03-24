@@ -16,6 +16,10 @@ import {
   Filter,
   MoreHorizontal,
   GripVertical,
+  Edit2Icon,
+  Edit,
+  Edit3,
+  EditIcon,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { Card, CardContent } from "@/components/ui/card";
@@ -78,9 +82,12 @@ interface Milestone {
 interface Task {
   id: string;
   title: string;
+  description?: string;
   status: string;
   priority: string;
+  plannedDate?: string;
   assignees: { user: { id: string; userName: string; avatar?: string } }[];
+  milestoneId?: string;
   createdAt: string;
 }
 
@@ -101,6 +108,15 @@ export default function ProjectDetailPage() {
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<{
+    id: string;
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeIds?: string[];
+    milestoneId?: string;
+  } | null>(null);
   const [isCreateMilestoneDialogOpen, setIsCreateMilestoneDialogOpen] = useState(false);
   const [isEditMilestoneDialogOpen, setIsEditMilestoneDialogOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
@@ -237,7 +253,7 @@ export default function ProjectDetailPage() {
     description?: string;
     priority: string;
     plannedDate?: string;
-    assigneeId?: string;
+    assigneeIds?: string[];
     milestoneId?: string;
   }) => {
     if (!taskData.milestoneId) {
@@ -257,6 +273,7 @@ export default function ProjectDetailPage() {
           priority: taskData.priority,
           status: "待开始",
           plannedDate: taskData.plannedDate,
+          assignees: taskData.assigneeIds?.map((userId) => ({ userId })) || [],
         }),
       });
 
@@ -269,6 +286,46 @@ export default function ProjectDetailPage() {
       }
     } catch {
       toast.error("创建任务失败");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditTask = async (taskData: {
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeIds?: string[];
+    milestoneId?: string;
+  }) => {
+    if (!editingTask) return;
+
+    try {
+      setIsSubmitting(true);
+      const res = await fetch("/api/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingTask.id,
+          title: taskData.title,
+          description: taskData.description,
+          priority: taskData.priority,
+          plannedDate: taskData.plannedDate,
+          milestoneId: taskData.milestoneId,
+          assignees: taskData.assigneeIds?.map((userId) => ({ userId })) || [],
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("任务更新成功");
+        setEditingTask(null);
+        await fetchProject(false);
+      } else {
+        toast.error("更新任务失败");
+      }
+    } catch {
+      toast.error("更新任务失败");
     } finally {
       setIsSubmitting(false);
     }
@@ -521,7 +578,7 @@ export default function ProjectDetailPage() {
       </Link>
 
       <Card>
-        <CardContent className="p-5">
+        <CardContent >
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
@@ -657,26 +714,44 @@ export default function ProjectDetailPage() {
                                 snapshot.isDragging && "shadow-lg opacity-90"
                               )}
                             >
-                              <button
-                                onClick={() => setSelectedMilestoneId(milestone.id)}
-                                className="w-full text-left p-3"
-                              >
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                  <h3 className={cn(
-                                    "font-medium text-sm truncate flex-1",
-                                    isSelected && "text-primary"
-                                  )}>
-                                    {milestone.name}
-                                  </h3>
+                              <div onClick={() => setSelectedMilestoneId(milestone.id)}
+                                className="w-full p-3 hover:pl-6 hover:pr-8 transition-all flex items-center justify-between group"
+                                {...provided.dragHandleProps}
+                                >
+                                <div className="w-3/5 text-left ">
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <h3 className={cn(
+                                      "font-medium text-sm truncate flex-1",
+                                      isSelected && "text-primary"
+                                    )}>
+                                      {milestone.name}
+                                    </h3>
+                                  </div>
+
+                                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                      <CalendarIcon size={11} />
+                                      {milestone.dueDate
+                                        ? new Date(milestone.dueDate).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })
+                                        : "无截止"
+                                      }
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <CheckCircle2 size={11} />
+                                      {completedTasks}/{totalTasks}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="size-12">
                                   {/* 圆形进度 */}
-                                  <div className="relative w-8 h-8 shrink-0">
-                                    <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
+                                  <div className="relative w-12 h-12 shrink-0">
+                                    <svg className="w-12 h-12 -rotate-90" viewBox="0 0 32 32">
                                       <circle
                                         cx="16"
                                         cy="16"
                                         r="12"
                                         stroke="currentColor"
-                                        strokeWidth="3"
+                                        strokeWidth="2"
                                         fill="none"
                                         className="text-muted/30"
                                       />
@@ -685,7 +760,7 @@ export default function ProjectDetailPage() {
                                         cy="16"
                                         r="12"
                                         stroke="currentColor"
-                                        strokeWidth="3"
+                                        strokeWidth="2"
                                         fill="none"
                                         strokeDasharray={`${(completedTasks / (totalTasks || 1)) * 75.4} 75.4`}
                                         className={cn(
@@ -701,42 +776,24 @@ export default function ProjectDetailPage() {
                                     </span>
                                   </div>
                                 </div>
-
-                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1">
-                                    <CalendarIcon size={11} />
-                                    {milestone.dueDate
-                                      ? new Date(milestone.dueDate).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })
-                                      : "无截止"
-                                    }
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <CheckCircle2 size={11} />
-                                    {completedTasks}/{totalTasks}
-                                  </span>
+                                <div
+                                  className="absolute top-1/2 -translate-y-1/2 left-0.5 p-1 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <GripVertical size={14} className="text-muted-foreground" />
                                 </div>
-                              </button>
 
-                              <div
-                                {...provided.dragHandleProps}
-                                className="absolute top-1/2 -translate-y-1/2 right-1 p-1 cursor-grab opacity-0 hover:opacity-100 transition-opacity"
-                              >
-                                <GripVertical size={14} className="text-muted-foreground" />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditMilestoneDialog(milestone);
+                                  }}
+                                  className="absolute top-1/2 -translate-1/2 right-0.5 group-hover:opacity-100 hover:opacity-100 opacity-0 cursor-pointer"
+                                >
+                                  <Edit size={18} className="text-primary" />
+                                </button>
                               </div>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openEditMilestoneDialog(milestone);
-                                }}
-                                className="absolute top-1 right-6 p-1 opacity-0 hover:opacity-100 transition-opacity"
-                              >
-                                <MoreHorizontal size={14} className="text-muted-foreground" />
-                              </button>
-
-                              {isSelected && (
-                                <div className="absolute top-1/2 right-0 -translate-y-6 w-1 h-12 rounded-full bg-primary" />
-                              )}
+                              
+                              
                             </div>
                           )}
                         </Draggable>
@@ -753,12 +810,12 @@ export default function ProjectDetailPage() {
         <div className="lg:col-span-3 flex flex-col gap-3 min-h-0">
           {selectedMilestone ? (
             <>
-              <Card className="shrink-0">
+              <Card className="shrink-0 p-0">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <h2 className="font-medium text-sm">{selectedMilestone.name}</h2>
-                      <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      <h2 className="text-lg font-bold">{selectedMilestone.name}</h2>
+                      <p className="text-xs text-muted-foreground flex items-center gap-2 mt-2">
                         <span className="flex items-center gap-1">
                           <CalendarIcon size={11} />
                           {selectedMilestone.dueDate
@@ -914,7 +971,25 @@ export default function ProjectDetailPage() {
                                 <MoreHorizontal size={14} />
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setEditingTask({
+                                      id: task.id,
+                                      title: task.title,
+                                      description: task.description,
+                                      priority: task.priority,
+                                      plannedDate: task.plannedDate,
+                                      assigneeIds: task.assignees?.map((a) => a.user.id) || [],
+                                      milestoneId: task.milestoneId,
+                                    });
+                                    setIsCreateDialogOpen(true);
+                                  }}
+                                  className="text-xs"
+                                >
+                                  <Edit size={12} className="mr-2" />
+                                  编辑任务
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                   onClick={() => openConfirmDialog("toggle", task)}
                                   className="text-xs"
                                 >
@@ -953,12 +1028,24 @@ export default function ProjectDetailPage() {
 
       <CreateTaskDialog
         open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        onSubmit={handleCreateTask}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) setEditingTask(null);
+        }}
+        onSubmit={editingTask ? handleEditTask : handleCreateTask}
         milestones={project?.milestones || []}
         defaultPriority={newTaskPriority}
         defaultMilestoneId={selectedMilestoneId}
-        submitText="创建"
+        submitText={editingTask ? "保存" : "创建"}
+        editingTask={editingTask ? {
+          id: editingTask.id,
+          title: editingTask.title,
+          description: editingTask.description,
+          priority: editingTask.priority,
+          plannedDate: editingTask.plannedDate,
+          assigneeIds: editingTask.assigneeIds,
+          milestoneId: editingTask.milestoneId,
+        } : undefined}
       />
 
       <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}>

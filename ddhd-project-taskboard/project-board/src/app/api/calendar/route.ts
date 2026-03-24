@@ -10,8 +10,10 @@ export async function GET(request: NextRequest) {
     const end = searchParams.get("end");
     const projectId = searchParams.get("projectId");
 
-    const where: Prisma.CalendarEventWhereInput = {};
-    
+    const where: Prisma.CalendarEventWhereInput = {
+      project: { archived: false },
+    };
+
     if (projectId) {
       where.projectId = projectId;
     }

@@ -8,10 +8,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const type = searchParams.get("type");
+    const includeArchived = searchParams.get("includeArchived");
+    const showArchivedOnly = searchParams.get("showArchivedOnly") === "true";
 
     const where: Prisma.ProjectWhereInput = {};
     if (status) where.status = status;
     if (type) where.type = type;
+    if (showArchivedOnly) {
+      where.archived = true;
+    } else if (includeArchived !== "true") {
+      where.archived = false;
+    }
 
     const projects = await prisma.project.findMany({
       where,
@@ -19,6 +26,16 @@ export async function GET(request: NextRequest) {
         _count: {
           select: {
             milestones: true,
+          },
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                userName: true,
+                avatar: true,
+              },
+            },
           },
         },
       },
@@ -61,5 +78,27 @@ export async function POST(request: NextRequest) {
       { error: "创建项目失败" },
       { status: 500 }
     );
+  }
+}
+
+// PATCH /api/projects - 归档/取消归档项目
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, archived } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "缺少项目ID" }, { status: 400 });
+    }
+
+    const project = await prisma.project.update({
+      where: { id },
+      data: { archived },
+    });
+
+    return NextResponse.json({ data: project });
+  } catch (error) {
+    console.error("更新项目失败:", error);
+    return NextResponse.json({ error: "更新项目失败" }, { status: 500 });
   }
 }

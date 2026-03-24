@@ -9,17 +9,20 @@ datasource db {
 
 // 用户/负责人
 model User {
-  id        String   @id @default(cuid())
-  userId    String   @unique // 用户唯一ID (如: 5314294e)
-  openId    String?  @unique // 第三方OpenID (如: ou_d16d474761c1bd2852b7d2f1aeafaadc)
-  userName  String   // 姓名
-  avatar    String?  // 头像URL
-  role      String   // 角色: 策划虾/创作虾/技术虾/运营虾/总指挥虾
-  email     String?  // 邮箱
-  phone     String?  // 电话
-  status    String   @default("active") // active/inactive
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String   @unique // 用户唯一ID (如: 5314294e)
+  openId        String?  @unique // 第三方OpenID (如: ou_d16d474761c1bd2852b7d2f1aeafaadc)
+  userName      String   // 姓名
+  avatar        String?  // 头像URL
+  avatarColorBg String?  // 颜色头像背景色
+  avatarColorText String? // 颜色头像文字色
+  role          String   // 角色: 策划虾/创作虾/技术虾/运营虾/总指挥虾
+  email         String?  // 邮箱
+  phone         String?  // 电话
+  status        String   @default("active") // active/inactive
+  isAgent       Boolean  @default(false) // 是否为Agent
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // 关联
   assignedTasks TaskAssignee[] // 分配的任务
@@ -54,6 +57,7 @@ model Project {
   client      String?  // 客户名称
   startDate   DateTime?
   endDate     DateTime?
+  archived    Boolean  @default(false) // 是否归档
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -97,7 +101,7 @@ model Task {
   assigneeName    String?   // 具体执行人 (deprecated, 使用 assignees)
   deliverableType String?   // 输出物类型标签（自由填写）
   status          String    @default("待开始") // 待开始/进行中/已完成/有风险/已延期/暂停
-  priority        String    @default("P1") // P0/P1/P2
+  priority        String    @default("P2") // P0/P1/P2/P3
   plannedDate     DateTime? // 计划日期
   actualDate      DateTime? // 实际完成日期
   completionNote  String?   // 任务完成说明

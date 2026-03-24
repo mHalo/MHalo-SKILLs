@@ -11,6 +11,7 @@ import {
   Calendar,
   Plus,
   FolderKanban,
+  Circle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -106,9 +107,8 @@ export default function PriorityPage() {
     plannedDate?: string;
     assigneeId?: string;
   }) => {
-    // 根据象限设置优先级和状态
+    // 根据象限设置优先级
     let priority = taskData.priority;
-    let status = "待开始";
 
     switch (selectedQuadrant) {
       case "p0":
@@ -117,17 +117,15 @@ export default function PriorityPage() {
       case "p1":
         priority = "P1";
         break;
-      case "risk":
+      case "p2":
         priority = "P2";
-        status = "有风险";
         break;
-      case "normal":
-        priority = "P2";
-        status = "待开始";
+      case "p3":
+        priority = "P3";
         break;
     }
 
-    toast.success(`任务将创建在「${selectedQuadrant}」象限 (P:${priority}, S:${status})`);
+    toast.success(`任务将创建在「${selectedQuadrant}」象限 (P:${priority})`);
   };
 
   const openCreateDialog = (quadrantKey: string) => {
@@ -140,8 +138,14 @@ export default function PriorityPage() {
       case "p1":
         setNewTaskPriority("P1");
         break;
+      case "p2":
+        setNewTaskPriority("P2");
+        break;
+      case "p3":
+        setNewTaskPriority("P3");
+        break;
       default:
-        setNewTaskPriority("P1");
+        setNewTaskPriority("P2");
     }
     setIsCreateDialogOpen(true);
   };
@@ -150,7 +154,7 @@ export default function PriorityPage() {
   const quadrants: QuadrantData[] = [
     {
       key: "p0",
-      title: "重要且紧急",
+      title: "紧急重要 P0",
       tasks: tasks.filter((t) => {
         const matchProject = selectedProject === "all" || t.milestone?.project.id === selectedProject;
         const matchStatus = statusFilter === "all" ||
@@ -166,7 +170,7 @@ export default function PriorityPage() {
     },
     {
       key: "p1",
-      title: "重要不紧急",
+      title: "紧急不重要 P1",
       tasks: tasks.filter((t) => {
         const matchProject = selectedProject === "all" || t.milestone?.project.id === selectedProject;
         const matchStatus = statusFilter === "all" ||
@@ -181,14 +185,14 @@ export default function PriorityPage() {
       labelText: "text-[#25B079]",
     },
     {
-      key: "risk",
-      title: "有风险任务",
+      key: "p2",
+      title: "重要不紧急 P2",
       tasks: tasks.filter((t) => {
         const matchProject = selectedProject === "all" || t.milestone?.project.id === selectedProject;
         const matchStatus = statusFilter === "all" ||
           (statusFilter === "completed" && t.status === "已完成") ||
           (statusFilter === "uncompleted" && t.status !== "已完成");
-        return t.priority === "P2" && t.status === "有风险" && matchProject && matchStatus;
+        return t.priority === "P2" && matchProject && matchStatus;
       }),
       icon: Clock,
       accentColor: "text-[#637CFF]",
@@ -197,20 +201,20 @@ export default function PriorityPage() {
       labelText: "text-[#637CFF]",
     },
     {
-      key: "normal",
-      title: "普通任务",
+      key: "p3",
+      title: "不重要不紧急 P3",
       tasks: tasks.filter((t) => {
         const matchProject = selectedProject === "all" || t.milestone?.project.id === selectedProject;
         const matchStatus = statusFilter === "all" ||
           (statusFilter === "completed" && t.status === "已完成") ||
           (statusFilter === "uncompleted" && t.status !== "已完成");
-        return t.priority === "P2" && t.status !== "有风险" && matchProject && matchStatus;
+        return t.priority === "P3" && matchProject && matchStatus;
       }),
-      icon: CheckCircle2,
-      accentColor: "text-[#7E8485]",
-      bgColor: "bg-[#7E8485]",
-      labelBg: "bg-[#7E8485]/10",
-      labelText: "text-[#7E8485]",
+      icon: Circle,
+      accentColor: "text-[#9CA3AF]",
+      bgColor: "bg-[#9CA3AF]",
+      labelBg: "bg-[#9CA3AF]/10",
+      labelText: "text-[#9CA3AF]",
     },
   ];
 
@@ -222,6 +226,8 @@ export default function PriorityPage() {
         return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#25B079]/10 text-[#25B079]">P1</span>;
       case "P2":
         return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#637CFF]/10 text-[#637CFF]">P2</span>;
+      case "P3":
+        return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">P3</span>;
       default:
         return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#E8EDEC] text-[#7E8485]">P3</span>;
     }
@@ -291,7 +297,7 @@ export default function PriorityPage() {
   const QuadrantColumn = ({ quadrant }: { quadrant: QuadrantData }) => {
     const Icon = quadrant.icon;
     return (
-      <div className="w-72 shrink-0 flex flex-col h-full max-h-[calc(100vh-180px)]">
+      <div className="w-1/4 shrink-0 flex flex-col h-full max-h-[calc(100vh-180px)]">
         {/* 头部 */}
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
@@ -338,7 +344,7 @@ export default function PriorityPage() {
         <Skeleton className="h-7 w-40 mb-4" />
         <div className="flex gap-4 flex-1">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="w-72 h-full shrink-0 rounded-2xl" />
+            <Skeleton key={i} className="w-1/4 h-full shrink-0 rounded-2xl" />
           ))}
         </div>
       </div>

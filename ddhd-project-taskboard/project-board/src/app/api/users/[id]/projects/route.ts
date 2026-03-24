@@ -44,7 +44,7 @@ export async function GET(
 
     // 获取用户参与的所有项目
     const projectMembers = await prisma.projectMember.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, project: { archived: false } },
       include: {
         project: {
           include: {
@@ -71,7 +71,7 @@ export async function GET(
 
     // 获取用户有任务分配的项目（即使不是项目成员）
     const taskAssignees = await prisma.taskAssignee.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, task: { milestone: { project: { archived: false } } } },
       include: {
         task: {
           include: {

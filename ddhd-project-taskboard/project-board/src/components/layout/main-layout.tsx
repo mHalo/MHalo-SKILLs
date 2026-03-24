@@ -16,8 +16,8 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* 右侧内容区：Header + Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-6xl mx-auto">
+        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          <div className="max-w-8xl mx-auto">
             {children}
           </div>
         </main>

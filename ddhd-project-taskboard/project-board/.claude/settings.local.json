@@ -3,7 +3,16 @@
     "allow": [
       "Bash(npm run:*)",
       "Bash(npx tsc:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npx prisma:*)",
+      "Bash(sqlite3:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(rm:*)",
+      "Bash(tasklist:*)",
+      "Bash(wmic process:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

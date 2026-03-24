@@ -40,13 +40,22 @@ interface CreateTaskDialogProps {
     description?: string;
     priority: string;
     plannedDate?: string;
-    assigneeId?: string;
+    assigneeIds?: string[];
     milestoneId?: string;
   }) => Promise<void> | void;
   milestones?: Milestone[];
   defaultPriority?: string;
   defaultMilestoneId?: string;
   submitText?: string;
+  editingTask?: {
+    id: string;
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeIds?: string[];
+    milestoneId?: string;
+  };
 }
 
 export function CreateTaskDialog({
@@ -57,14 +66,15 @@ export function CreateTaskDialog({
   defaultPriority = "P1",
   defaultMilestoneId = "",
   submitText = "创建",
+  editingTask,
 }: CreateTaskDialogProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState(defaultPriority);
-  const [plannedDate, setPlannedDate] = useState("");
-  const [milestoneId, setMilestoneId] = useState(defaultMilestoneId);
+  const [title, setTitle] = useState(editingTask?.title || "");
+  const [description, setDescription] = useState(editingTask?.description || "");
+  const [priority, setPriority] = useState(editingTask?.priority || defaultPriority);
+  const [plannedDate, setPlannedDate] = useState(editingTask?.plannedDate || "");
+  const [milestoneId, setMilestoneId] = useState(editingTask?.milestoneId || defaultMilestoneId);
   const [assignees, setAssignees] = useState<User[]>([]);
-  const [selectedAssignee, setSelectedAssignee] = useState<string>("");
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>(editingTask?.assigneeIds || []);
   const [assigneeSearch, setAssigneeSearch] = useState<string>("");
   const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,15 +100,24 @@ export function CreateTaskDialog({
   // 重置表单
   useEffect(() => {
     if (open) {
-      setTitle("");
-      setDescription("");
-      setPriority(defaultPriority);
-      setPlannedDate("");
-      setMilestoneId(defaultMilestoneId);
-      setSelectedAssignee("");
+      if (editingTask) {
+        setTitle(editingTask.title);
+        setDescription(editingTask.description || "");
+        setPriority(editingTask.priority);
+        setPlannedDate(editingTask.plannedDate || "");
+        setMilestoneId(editingTask.milestoneId || defaultMilestoneId);
+        setSelectedAssignees(editingTask.assigneeIds || []);
+      } else {
+        setTitle("");
+        setDescription("");
+        setPriority(defaultPriority);
+        setPlannedDate("");
+        setMilestoneId(defaultMilestoneId);
+        setSelectedAssignees([]);
+      }
       setAssigneeSearch("");
     }
-  }, [open, defaultPriority, defaultMilestoneId]);
+  }, [open, defaultPriority, defaultMilestoneId, editingTask]);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -113,7 +132,7 @@ export function CreateTaskDialog({
         description: description.trim() || undefined,
         priority,
         plannedDate: plannedDate || undefined,
-        assigneeId: selectedAssignee || undefined,
+        assigneeIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
         milestoneId: milestoneId || undefined,
       });
       onOpenChange(false);
@@ -132,7 +151,7 @@ export function CreateTaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
-          <DialogTitle>创建任务</DialogTitle>
+          <DialogTitle>{editingTask ? "编辑任务" : "创建任务"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4 px-1 max-h-[60vh] overflow-y-auto">
@@ -199,36 +218,62 @@ export function CreateTaskDialog({
             />
           </div>
 
-          {/* 优先级和责任人同行 */}
-          <div className="flex gap-4">
-            {/* 优先级 */}
-            <div className="flex-1 space-y-2">
-              <Label>优先级</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant={priority === "P0" ? "default" : "outline"}
-                  size="sm"
-                  className={priority === "P0" ? "bg-[#FF6231] hover:bg-[#FF6231]/90" : ""}
-                  onClick={() => setPriority("P0")}
-                >
-                  P0
-                </Button>
-                <Button
-                  variant={priority === "P1" ? "default" : "outline"}
-                  size="sm"
-                  className={priority === "P1" ? "bg-[#25B079] hover:bg-[#25B079]/90" : ""}
-                  onClick={() => setPriority("P1")}
-                >
-                  P1
-                </Button>
-                <Button
-                  variant={priority === "P2" ? "default" : "outline"}
-                  size="sm"
-                  className={priority === "P2" ? "bg-[#637CFF] hover:bg-[#637CFF]/90" : ""}
-                  onClick={() => setPriority("P2")}
-                >
-                  P2
-                </Button>
+          {/* 优先级 */}
+          <div className="space-y-2">
+            <Label>优先级</Label>
+            <div className="flex gap-2">
+                <div className="relative group">
+                  <Button
+                    variant={priority === "P0" ? "default" : "outline"}
+                    size="sm"
+                    className={priority === "P0" ? "bg-[#FF6231] hover:bg-[#FF6231]/90" : ""}
+                    onClick={() => setPriority("P0")}
+                  >
+                    P0
+                  </Button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    紧急重要
+                  </span>
+                </div>
+                <div className="relative group">
+                  <Button
+                    variant={priority === "P1" ? "default" : "outline"}
+                    size="sm"
+                    className={priority === "P1" ? "bg-[#25B079] hover:bg-[#25B079]/90" : ""}
+                    onClick={() => setPriority("P1")}
+                  >
+                    P1
+                  </Button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    紧急不重要
+                  </span>
+                </div>
+                <div className="relative group">
+                  <Button
+                    variant={priority === "P2" ? "default" : "outline"}
+                    size="sm"
+                    className={priority === "P2" ? "bg-[#637CFF] hover:bg-[#637CFF]/90" : ""}
+                    onClick={() => setPriority("P2")}
+                  >
+                    P2
+                  </Button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    重要不紧急
+                  </span>
+                </div>
+                <div className="relative group">
+                  <Button
+                    variant={priority === "P3" ? "default" : "outline"}
+                    size="sm"
+                    className={priority === "P3" ? "bg-[#9CA3AF] hover:bg-[#9CA3AF]/90" : ""}
+                    onClick={() => setPriority("P3")}
+                  >
+                    P3
+                  </Button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    不重要不紧急
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -245,8 +290,8 @@ export function CreateTaskDialog({
                     />
                   }
                 >
-                  {selectedAssignee
-                    ? assignees.find((u) => u.id === selectedAssignee)?.userName
+                  {selectedAssignees.length > 0
+                    ? `已选择 ${selectedAssignees.length} 人`
                     : "选择责任人"}
                 </PopoverTrigger>
                 <PopoverContent className="w-[280px] p-0" align="start">
@@ -261,33 +306,72 @@ export function CreateTaskDialog({
                       {filteredAssignees.length === 0 ? (
                         <p className="py-2 px-2 text-sm text-muted-foreground">未找到责任人</p>
                       ) : (
-                        filteredAssignees.map((user) => (
-                          <div
-                            key={user.id}
-                            className={cn(
-                              "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
-                              selectedAssignee === user.id && "bg-accent"
-                            )}
-                            onClick={() => {
-                              setSelectedAssignee(user.id);
-                              setAssigneePopoverOpen(false);
-                              setAssigneeSearch("");
-                            }}
-                          >
-                            <div className="w-6 h-6 rounded-full bg-[#637CFF] flex items-center justify-center text-white text-xs font-medium">
-                              {user.userName.charAt(0)}
+                        filteredAssignees.map((user) => {
+                          const isSelected = selectedAssignees.includes(user.id);
+                          return (
+                            <div
+                              key={user.id}
+                              className={cn(
+                                "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
+                                isSelected && "bg-accent"
+                              )}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedAssignees(selectedAssignees.filter((id) => id !== user.id));
+                                } else {
+                                  setSelectedAssignees([...selectedAssignees, user.id]);
+                                }
+                              }}
+                            >
+                              <div className={cn(
+                                "w-5 h-5 rounded border flex items-center justify-center shrink-0",
+                                isSelected ? "bg-[#637CFF] border-[#637CFF]" : "border-gray-300"
+                              )}>
+                                {isSelected && (
+                                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="w-6 h-6 rounded-full bg-[#637CFF] flex items-center justify-center text-white text-xs font-medium shrink-0">
+                                {user.userName.charAt(0)}
+                              </div>
+                              <span className="text-sm">{user.userName}</span>
+                              <span className="text-xs text-muted-foreground ml-auto">{user.role}</span>
                             </div>
-                            <span className="text-sm">{user.userName}</span>
-                            <span className="text-xs text-muted-foreground ml-auto">{user.role}</span>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </ScrollArea>
                 </PopoverContent>
               </Popover>
+              {/* 已选责任人标签 */}
+              {selectedAssignees.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {selectedAssignees.map((id) => {
+                    const user = assignees.find((u) => u.id === id);
+                    if (!user) return null;
+                    return (
+                      <div
+                        key={id}
+                        className="flex items-center gap-1 bg-[#637CFF]/10 text-[#637CFF] px-2 py-1 rounded-full text-xs"
+                      >
+                        <span>{user.userName}</span>
+                        <button
+                          onClick={() => setSelectedAssignees(selectedAssignees.filter((a) => a !== id))}
+                          className="ml-0.5 hover:bg-[#637CFF]/20 rounded-full p-0.5"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
 
           {/* 计划完成节点 */}
           <div className="space-y-2">

@@ -52,7 +52,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@base-ui/react";
+import { TaskDetailDialog } from "@/components/task/task-detail-dialog";
 
 type CalendarView = "day" | "week" | "month";
 
@@ -62,7 +65,7 @@ interface CalendarEvent {
   eventType: string;
   eventDate: string;
   duration?: number;
-  description?: string;
+  notes?: string;
   project?: {
     id: string;
     name: string;
@@ -76,6 +79,7 @@ interface Task {
   title: string;
   status: string;
   priority: string;
+  description?: string;
   plannedDate?: string;
   actualDate?: string;
   assignees?: { user: { userName: string; avatar?: string } }[];
@@ -90,6 +94,10 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
   // 新建事件表单
   const [newEvent, setNewEvent] = useState({
@@ -163,6 +171,16 @@ export default function CalendarPage() {
     } catch {
       console.error("获取项目列表失败");
     }
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setTaskDialogOpen(true);
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setEventDialogOpen(true);
   };
 
   const handleCreateEvent = async () => {
@@ -309,6 +327,7 @@ export default function CalendarPage() {
                 {dayEvents.slice(0, 2).map((event) => (
                   <div
                     key={event.id}
+                    onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
                     className={cn(
                       "text-[10px] px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80",
                       event.eventType === "会议" && "bg-blue-100 text-blue-700",
@@ -323,6 +342,7 @@ export default function CalendarPage() {
                 {dayTasks.slice(0, 2).map((task) => (
                   <div
                     key={task.id}
+                    onClick={(e) => { e.stopPropagation(); handleTaskClick(task); }}
                     className={cn(
                       "text-[10px] px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80 flex items-center gap-1",
                       task.status === "已完成"
@@ -394,6 +414,7 @@ export default function CalendarPage() {
                 {dayEvents.map((event) => (
                   <Card
                     key={event.id}
+                    onClick={() => handleEventClick(event)}
                     className="cursor-pointer hover:shadow-md transition-shadow"
                   >
                     <CardContent className="p-2">
@@ -422,6 +443,7 @@ export default function CalendarPage() {
                 {dayTasks.map((task) => (
                   <Card
                     key={task.id}
+                    onClick={() => handleTaskClick(task)}
                     className={cn(
                       "cursor-pointer hover:shadow-md transition-shadow",
                       task.status === "已完成" && "bg-green-50"
@@ -492,7 +514,14 @@ export default function CalendarPage() {
             </div>
           ) : (
             allItems.map((item, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
+              <Card
+                key={index}
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => {
+                  if (item.itemType === "task") handleTaskClick(item as Task);
+                  else handleEventClick(item as CalendarEvent);
+                }}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div
@@ -534,6 +563,11 @@ export default function CalendarPage() {
                       {"description" in item && item.description && (
                         <p className="text-sm text-muted-foreground mt-1">
                           {item.description}
+                        </p>
+                      )}
+                      {"notes" in item && (item as CalendarEvent).notes && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(item as CalendarEvent).notes}
                         </p>
                       )}
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
@@ -587,7 +621,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
+    <div className="space-y-4 h-full flex flex-col max-w-6xl mx-auto">
       {/* 顶部统计 */}
       <div className="grid grid-cols-4 gap-4">
         <Card>
@@ -639,9 +673,6 @@ export default function CalendarPage() {
       {/* 工具栏 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button onClick={goToToday}>
-            今天
-          </Button>
           <Separator orientation="vertical" />
           <Button variant="outline" size="icon" onClick={goToPrevious}>
             <ChevronLeft size={18} />
@@ -686,7 +717,7 @@ export default function CalendarPage() {
 
       {/* 新建日程弹窗 */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>新建日程</DialogTitle>
           </DialogHeader>
@@ -701,54 +732,92 @@ export default function CalendarPage() {
                 }
               />
             </div>
-            <div className="space-y-2">
-              <Label>所属项目</Label>
-              <Select
-                value={newEvent.projectId || undefined}
-                onValueChange={(v) =>
-                  setNewEvent({ ...newEvent, projectId: v || "" })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择项目" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-[1fr_1fr] gap-4">
+              <div className="space-y-2">
+                <Label>所属项目</Label>
+                <Select
+                  value={newEvent.projectId}
+                  onValueChange={(v) =>
+                    setNewEvent({ ...newEvent, projectId: v || "" })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      {newEvent.projectId ? (projects.find(p => p.id === newEvent.projectId)?.name || "选择项目") : "选择项目"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>类型</Label>
+                <Select
+                  value={newEvent.eventType}
+                  onValueChange={(v) =>
+                    setNewEvent({ ...newEvent, eventType: v || "会议" })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="会议">会议</SelectItem>
+                    <SelectItem value="拜访">拜访</SelectItem>
+                    <SelectItem value="评审">评审</SelectItem>
+                    <SelectItem value="截止日">截止日</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>类型</Label>
-              <Select
-                value={newEvent.eventType}
-                onValueChange={(v) =>
-                  setNewEvent({ ...newEvent, eventType: v || "会议" })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="会议">会议</SelectItem>
-                  <SelectItem value="拜访">拜访</SelectItem>
-                  <SelectItem value="评审">评审</SelectItem>
-                  <SelectItem value="截止日">截止日</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>时间</Label>
-              <Input
-                type="datetime-local"
-                value={newEvent.eventDate}
-                onChange={(e) =>
-                  setNewEvent({ ...newEvent, eventDate: e.target.value })
-                }
-              />
+            <div className="grid grid-cols-[1fr_1fr] gap-4">
+              <div className="space-y-2">
+                <Label>日期</Label>
+                <Popover>
+                  <PopoverTrigger className="w-full" render={
+                    <div className="flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {newEvent.eventDate ? format(new Date(newEvent.eventDate), "yyyy年M月d日", { locale: zhCN }) : "选择日期"}
+                    </div>
+                  } />
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newEvent.eventDate ? new Date(newEvent.eventDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          const currentDate = newEvent.eventDate ? new Date(newEvent.eventDate) : new Date();
+                          date.setHours(currentDate.getHours(), currentDate.getMinutes());
+                          setNewEvent({ ...newEvent, eventDate: date.toISOString() });
+                        }
+                      }}
+                      locale={zhCN}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>时间</Label>
+                <Input
+                  type="time"
+                  step="1"
+                  value={newEvent.eventDate ? (() => {
+                    const d = new Date(newEvent.eventDate);
+                    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+                  })() : "09:00"}
+                  onChange={(e) => {
+                    const [hours, minutes] = e.target.value.split(":").map(Number);
+                    const baseDate = newEvent.eventDate ? new Date(newEvent.eventDate) : new Date();
+                    baseDate.setHours(hours, minutes);
+                    setNewEvent({ ...newEvent, eventDate: baseDate.toISOString() });
+                  }}
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label>备注</Label>
@@ -770,6 +839,75 @@ export default function CalendarPage() {
             </Button>
             <Button onClick={handleCreateEvent}>创建</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 任务详情对话框 */}
+      <TaskDetailDialog
+        open={taskDialogOpen}
+        onOpenChange={setTaskDialogOpen}
+        task={selectedTask}
+      />
+
+      {/* 日程详情对话框 */}
+      <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>日程详情</DialogTitle>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="space-y-4 py-4">
+              <div>
+                <h3 className="font-medium text-lg">{selectedEvent.title}</h3>
+                <div className="flex items-center gap-2 mt-2">
+                  <span
+                    className={cn(
+                      "text-xs px-2 py-0.5 rounded",
+                      selectedEvent.eventType === "会议" && "bg-blue-100 text-blue-700",
+                      selectedEvent.eventType === "拜访" && "bg-amber-100 text-amber-700",
+                      selectedEvent.eventType === "评审" && "bg-purple-100 text-purple-700",
+                      selectedEvent.eventType === "截止日" && "bg-red-100 text-red-700"
+                    )}
+                  >
+                    {selectedEvent.eventType}
+                  </span>
+                </div>
+              </div>
+
+              {selectedEvent.project && (
+                <div className="border-t pt-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-lime-100/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Briefcase size={14} className="text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">所属项目</span>
+                      </div>
+                      <p className="text-sm font-medium">{selectedEvent.project.name}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock size={14} className="text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">时间</span>
+                </div>
+                <p className="text-sm font-medium">
+                  {format(parseISO(selectedEvent.eventDate), "yyyy年M月d日 HH:mm")}
+                </p>
+              </div>
+
+              {selectedEvent.notes && (
+                <div className="border-t pt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs text-muted-foreground">备注</span>
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap">{selectedEvent.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
