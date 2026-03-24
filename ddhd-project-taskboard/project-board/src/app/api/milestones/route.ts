@@ -46,3 +46,36 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// PATCH /api/milestones - 批量更新里程碑排序
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { milestones } = body;
+
+    if (!milestones || !Array.isArray(milestones)) {
+      return NextResponse.json(
+        { error: "无效的里程碑数据" },
+        { status: 400 }
+      );
+    }
+
+    // 批量更新里程碑的 order
+    await Promise.all(
+      milestones.map((item: { id: string; order: number }) =>
+        prisma.milestone.update({
+          where: { id: item.id },
+          data: { order: item.order },
+        })
+      )
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("更新里程碑排序失败:", error);
+    return NextResponse.json(
+      { error: "更新里程碑排序失败" },
+      { status: 500 }
+    );
+  }
+}

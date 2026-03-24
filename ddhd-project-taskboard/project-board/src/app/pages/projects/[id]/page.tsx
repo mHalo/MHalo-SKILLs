@@ -15,7 +15,9 @@ import {
   ChevronDown,
   Filter,
   MoreHorizontal,
+  GripVertical,
 } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -70,6 +72,7 @@ interface Milestone {
   status: string;
   dueDate: string | null;
   tasks: Task[];
+  order: number;
 }
 
 interface Task {
@@ -99,6 +102,10 @@ export default function ProjectDetailPage() {
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateMilestoneDialogOpen, setIsCreateMilestoneDialogOpen] = useState(false);
+  const [isEditMilestoneDialogOpen, setIsEditMilestoneDialogOpen] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
+  const [editMilestoneName, setEditMilestoneName] = useState("");
+  const [editMilestoneDueDate, setEditMilestoneDueDate] = useState("");
   const [newMilestoneName, setNewMilestoneName] = useState("");
   const [newMilestoneDueDate, setNewMilestoneDueDate] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState("P1");
@@ -169,6 +176,45 @@ export default function ProjectDetailPage() {
     const completed = selectedMilestone.tasks?.filter(t => t.status === "已完成").length || 0;
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   }, [selectedMilestone]);
+
+  // 里程碑拖拽排序
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination || !project) return;
+
+    const { source, destination } = result;
+    if (source.index === destination.index) return;
+
+    // 获取当前排序的里程碑
+    const sortedMilestones = [...(project.milestones || [])].sort((a, b) => a.order - b.order);
+    const [movedItem] = sortedMilestones.splice(source.index, 1);
+    sortedMilestones.splice(destination.index, 0, movedItem);
+
+    // 更新本地状态（乐观更新）
+    const updatedMilestones = sortedMilestones.map((m, index) => ({
+      ...m,
+      order: index,
+    }));
+    setProject({
+      ...project,
+      milestones: updatedMilestones,
+    });
+
+    // 调用 API 保存排序
+    try {
+      await fetch("/api/milestones", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          milestones: updatedMilestones.map((m) => ({ id: m.id, order: m.order })),
+        }),
+      });
+      toast.success("里程碑顺序已更新");
+    } catch {
+      toast.error("更新排序失败");
+      // 失败时重新获取数据
+      fetchProject(false);
+    }
+  };
 
   // 获取项目中所有任务的唯一责任人
   const allAssignees = useMemo(() => {
@@ -263,6 +309,74 @@ export default function ProjectDetailPage() {
       }
     } catch {
       toast.error("创建里程碑失败");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openEditMilestoneDialog = (milestone: Milestone) => {
+    setEditingMilestone(milestone);
+    setEditMilestoneName(milestone.name);
+    setEditMilestoneDueDate(milestone.dueDate || "");
+    setIsEditMilestoneDialogOpen(true);
+  };
+
+  const handleUpdateMilestone = async () => {
+    if (!editingMilestone || !editMilestoneName.trim()) {
+      toast.error("请输入里程碑名称");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const res = await fetch(`/api/milestones/${editingMilestone.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editMilestoneName.trim(),
+          deadline: editMilestoneDueDate || null,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("里程碑更新成功");
+        setIsEditMilestoneDialogOpen(false);
+        setEditingMilestone(null);
+        await fetchProject(false);
+      } else {
+        const error = await res.json().catch(() => ({}));
+        toast.error(error.error || "更新里程碑失败");
+      }
+    } catch {
+      toast.error("更新里程碑失败");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteMilestone = async () => {
+    if (!editingMilestone) return;
+
+    try {
+      setIsSubmitting(true);
+      const res = await fetch(`/api/milestones/${editingMilestone.id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        toast.success("里程碑已删除");
+        setIsEditMilestoneDialogOpen(false);
+        setEditingMilestone(null);
+        if (selectedMilestoneId === editingMilestone.id) {
+          setSelectedMilestoneId("");
+        }
+        await fetchProject(false);
+      } else {
+        const error = await res.json().catch(() => ({}));
+        toast.error(error.error || "删除里程碑失败");
+      }
+    } catch {
+      toast.error("删除里程碑失败");
     } finally {
       setIsSubmitting(false);
     }
@@ -516,54 +630,91 @@ export default function ProjectDetailPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-2">
-              {project.milestones?.map((milestone) => {
-                const completedTasks = milestone.tasks?.filter(t => t.status === "已完成").length || 0;
-                const totalTasks = milestone.tasks?.length || 0;
-                const isSelected = selectedMilestoneId === milestone.id;
-
-                return (
-                  <button
-                    key={milestone.id}
-                    onClick={() => setSelectedMilestoneId(milestone.id)}
-                    className={cn(
-                      "w-full relative text-left p-3 rounded-lg border-2 transition-all duration-200 bg-gray-100/30",
-                      isSelected 
-                        ? "border-primary bg-primary/10 shadow-sm" 
-                        : "border-border hover:border-primary/50 hover:bg-muted/30"
-                    )}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="milestones">
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-2"
                   >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className={cn(
-                        "font-medium text-sm truncate",
-                        isSelected && "text-primary"
-                      )}>
-                        {milestone.name}
-                      </h3>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <CalendarIcon size={11} />
-                        {milestone.dueDate 
-                          ? new Date(milestone.dueDate).toLocaleDateString("zh-CN", {month: "short", day: "numeric"})
-                          : "无截止"
-                        }
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <CheckCircle2 size={11} />
-                        {completedTasks}/{totalTasks}
-                      </span>
-                    </div>
+                    {[...project.milestones].sort((a, b) => a.order - b.order).map((milestone, index) => {
+                      const completedTasks = milestone.tasks?.filter(t => t.status === "已完成").length || 0;
+                      const totalTasks = milestone.tasks?.length || 0;
+                      const isSelected = selectedMilestoneId === milestone.id;
 
-                    
-                    {isSelected && (
-                      <div className=" absolute top-1/2 right-1 -translate-y-6 w-1 h-12 rounded-full bg-primary" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                      return (
+                        <Draggable key={milestone.id} draggableId={milestone.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={cn(
+                                "relative rounded-lg border-2 transition-all duration-200 bg-gray-100/30",
+                                isSelected
+                                  ? "border-primary bg-primary/10 shadow-sm"
+                                  : "border-border hover:border-primary/50 hover:bg-muted/30",
+                                snapshot.isDragging && "shadow-lg opacity-90"
+                              )}
+                            >
+                              <button
+                                onClick={() => setSelectedMilestoneId(milestone.id)}
+                                className="w-full text-left p-3"
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <h3 className={cn(
+                                    "font-medium text-sm truncate flex-1",
+                                    isSelected && "text-primary"
+                                  )}>
+                                    {milestone.name}
+                                  </h3>
+                                </div>
+
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <CalendarIcon size={11} />
+                                    {milestone.dueDate
+                                      ? new Date(milestone.dueDate).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })
+                                      : "无截止"
+                                    }
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <CheckCircle2 size={11} />
+                                    {completedTasks}/{totalTasks}
+                                  </span>
+                                </div>
+                              </button>
+
+                              <div
+                                {...provided.dragHandleProps}
+                                className="absolute top-1/2 -translate-y-1/2 right-1 p-1 cursor-grab opacity-0 hover:opacity-100 transition-opacity"
+                              >
+                                <GripVertical size={14} className="text-muted-foreground" />
+                              </div>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditMilestoneDialog(milestone);
+                                }}
+                                className="absolute top-1 right-6 p-1 opacity-0 hover:opacity-100 transition-opacity"
+                              >
+                                <MoreHorizontal size={14} className="text-muted-foreground" />
+                              </button>
+
+                              {isSelected && (
+                                <div className="absolute top-1/2 right-0 -translate-y-6 w-1 h-12 rounded-full bg-primary" />
+                              )}
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           )}
         </div>
 
@@ -886,6 +1037,77 @@ export default function ProjectDetailPage() {
             </Button>
             <Button onClick={handleCreateMilestone} disabled={isSubmitting}>
               {isSubmitting ? "创建中..." : "创建"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 编辑里程碑弹窗 */}
+      <Dialog open={isEditMilestoneDialogOpen} onOpenChange={setIsEditMilestoneDialogOpen}>
+        <DialogContent className="sm:max-w-sm bg-white">
+          <DialogHeader>
+            <DialogTitle>编辑里程碑</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editMilestoneName">里程碑名称 *</Label>
+              <Input
+                id="editMilestoneName"
+                placeholder="输入里程碑名称"
+                value={editMilestoneName}
+                onChange={(e) => setEditMilestoneName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>截止日期</Label>
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-start text-left font-normal"
+                    />
+                  }
+                >
+                  {editMilestoneDueDate ? (
+                    format(new Date(editMilestoneDueDate), "yyyy-MM-dd")
+                  ) : (
+                    <span className="text-muted-foreground">选择截止日期（可选）</span>
+                  )}
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editMilestoneDueDate ? new Date(editMilestoneDueDate) : undefined}
+                    onSelect={(date) => setEditMilestoneDueDate(date ? format(date, "yyyy-MM-dd") : "")}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="destructive"
+              onClick={handleDeleteMilestone}
+              disabled={isSubmitting}
+            >
+              删除
+            </Button>
+            <div className="flex-1" />
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditMilestoneDialogOpen(false);
+                setEditingMilestone(null);
+              }}
+              disabled={isSubmitting}
+            >
+              取消
+            </Button>
+            <Button onClick={handleUpdateMilestone} disabled={isSubmitting}>
+              {isSubmitting ? "保存中..." : "保存"}
             </Button>
           </DialogFooter>
         </DialogContent>
