@@ -668,6 +668,38 @@ export default function ProjectDetailPage() {
                                   )}>
                                     {milestone.name}
                                   </h3>
+                                  {/* 圆形进度 */}
+                                  <div className="relative w-8 h-8 shrink-0">
+                                    <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
+                                      <circle
+                                        cx="16"
+                                        cy="16"
+                                        r="12"
+                                        stroke="currentColor"
+                                        strokeWidth="3"
+                                        fill="none"
+                                        className="text-muted/30"
+                                      />
+                                      <circle
+                                        cx="16"
+                                        cy="16"
+                                        r="12"
+                                        stroke="currentColor"
+                                        strokeWidth="3"
+                                        fill="none"
+                                        strokeDasharray={`${(completedTasks / (totalTasks || 1)) * 75.4} 75.4`}
+                                        className={cn(
+                                          "transition-all duration-300",
+                                          completedTasks === totalTasks && totalTasks > 0
+                                            ? "text-green-500"
+                                            : "text-primary"
+                                        )}
+                                      />
+                                    </svg>
+                                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+                                      {totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%
+                                    </span>
+                                  </div>
                                 </div>
 
                                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
