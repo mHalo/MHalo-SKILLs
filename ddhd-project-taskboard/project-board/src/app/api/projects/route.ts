@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         description,
-        type: type || "营销",
+        type: type || "创意营销",
         client,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,

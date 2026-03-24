@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -64,7 +65,7 @@ export function Sidebar({ className }: SidebarProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newProject, setNewProject] = useState({
     name: "",
-    type: "营销",
+    type: "创意营销",
     client: "",
     description: "",
   });
@@ -87,7 +88,7 @@ export function Sidebar({ className }: SidebarProps) {
         const data = await res.json();
         toast.success("项目创建成功");
         setIsCreateDialogOpen(false);
-        setNewProject({ name: "", type: "营销", client: "", description: "" });
+        setNewProject({ name: "", type: "创意营销", client: "", description: "" });
         // 跳转到新项目详情页
         router.push(`/projects/${data.data.id}`);
       } else {
@@ -174,7 +175,7 @@ export function Sidebar({ className }: SidebarProps) {
             <div className="space-y-2">
               <Label>项目类型</Label>
               <div className="flex flex-wrap gap-2">
-                {["营销", "活动", "内容制作", "开发"].map((type) => (
+                {["创意营销", "活动营销", "内容制作", "技术开发", "其它"].map((type) => (
                   <Button
                     key={type}
                     variant={newProject.type === type ? "default" : "outline"}
@@ -199,13 +200,14 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">项目描述</Label>
-              <Input
+              <Textarea
                 id="description"
                 placeholder="输入项目描述（可选）"
                 value={newProject.description}
                 onChange={(e) =>
                   setNewProject({ ...newProject, description: e.target.value })
                 }
+                rows={3}
               />
             </div>
           </div>
