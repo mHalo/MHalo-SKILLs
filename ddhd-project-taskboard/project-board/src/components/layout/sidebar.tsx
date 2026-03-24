@@ -59,7 +59,7 @@ const mainMenuItems = [
   },
   {
     icon: AlertCircle,
-    label: "关键",
+    label: "紧急程度",
     href: "/priority",
   },
 ];
