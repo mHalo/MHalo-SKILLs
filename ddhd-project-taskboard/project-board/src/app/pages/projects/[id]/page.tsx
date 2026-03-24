@@ -442,7 +442,7 @@ export default function ProjectDetailPage() {
                     key={milestone.id}
                     onClick={() => setSelectedMilestoneId(milestone.id)}
                     className={cn(
-                      "w-full text-left p-3 rounded-lg border-2 transition-all duration-200",
+                      "w-full relative text-left p-3 rounded-lg border-2 transition-all duration-200 bg-white",
                       isSelected 
                         ? "border-primary bg-primary/10 shadow-sm" 
                         : "border-border hover:border-primary/50 hover:bg-muted/30"
@@ -455,9 +455,6 @@ export default function ProjectDetailPage() {
                       )}>
                         {milestone.name}
                       </h3>
-                      {isSelected && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
-                      )}
                     </div>
                     
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -473,6 +470,11 @@ export default function ProjectDetailPage() {
                         {completedTasks}/{totalTasks}
                       </span>
                     </div>
+
+                    
+                    {isSelected && (
+                      <div className=" absolute top-1/2 right-1 -translate-y-6 w-1 h-12 rounded-full bg-primary" />
+                    )}
                   </button>
                 );
               })}
@@ -541,7 +543,7 @@ export default function ProjectDetailPage() {
                 </Button>
               </div>
 
-              <div className="flex-1 overflow-auto space-y-2">
+              <div className="flex-1 overflow-auto p-1 space-y-3">
                 {filteredTasks.length === 0 ? (
                   <Card className="flex-1">
                     <CardContent className="py-12 text-center">

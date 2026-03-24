@@ -135,7 +135,7 @@ export function CreateTaskDialog({
           <DialogTitle>创建任务</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+        <div className="space-y-4 py-4 px-1 max-h-[60vh] overflow-y-auto">
           {/* 所属里程碑 - 仅当有里程碑列表时显示 */}
           {milestones.length > 0 && (
             <div className="space-y-2">
