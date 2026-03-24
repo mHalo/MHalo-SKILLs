@@ -22,13 +22,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -162,7 +155,7 @@ export function Sidebar({ className }: SidebarProps) {
 
       {/* 创建项目弹窗 */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle>创建新项目</DialogTitle>
           </DialogHeader>
@@ -179,23 +172,19 @@ export function Sidebar({ className }: SidebarProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="type">项目类型</Label>
-              <Select
-                value={newProject.type}
-                onValueChange={(v) =>
-                  setNewProject({ ...newProject, type: v || "营销" })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="营销">营销</SelectItem>
-                  <SelectItem value="活动">活动</SelectItem>
-                  <SelectItem value="内容制作">内容制作</SelectItem>
-                  <SelectItem value="开发">开发</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>项目类型</Label>
+              <div className="flex flex-wrap gap-2">
+                {["营销", "活动", "内容制作", "开发"].map((type) => (
+                  <Button
+                    key={type}
+                    variant={newProject.type === type ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setNewProject({ ...newProject, type })}
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="client">客户名称</Label>
