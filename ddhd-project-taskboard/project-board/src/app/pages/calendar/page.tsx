@@ -706,6 +706,17 @@ export default function CalendarPage() {
         <Card>
           <CardContent className="p-3 flex items-center justify-between">
             <div>
+              <p className="text-xs text-muted-foreground">全部事项</p>
+              <p className="text-2xl font-bold">{stats.totalEvents + stats.totalTasks}</p>
+            </div>
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <CalendarIcon size={20} className="text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 flex items-center justify-between">
+            <div>
               <p className="text-xs text-muted-foreground">日程</p>
               <p className="text-2xl font-bold">{stats.totalEvents}</p>
             </div>
@@ -722,17 +733,6 @@ export default function CalendarPage() {
             </div>
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
               <Briefcase size={20} className="text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">全部事项</p>
-              <p className="text-2xl font-bold">{stats.totalEvents + stats.totalTasks}</p>
-            </div>
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <CalendarIcon size={20} className="text-primary" />
             </div>
           </CardContent>
         </Card>
