@@ -656,7 +656,15 @@ export default function ProjectDetailPage() {
                       <div className="flex -space-x-1.5">
                         {allAssignees.slice(0, 6).map((assignee) => {
                           const color = getAvatarColor(assignee.userName);
-                          return (
+                          return assignee.avatar ? (
+                            <img
+                              key={assignee.id}
+                              src={assignee.avatar}
+                              alt={assignee.userName}
+                              className="w-7 h-7 rounded-full border-2 border-background object-cover"
+                              title={assignee.userName}
+                            />
+                          ) : (
                             <div
                               key={assignee.id}
                               className={cn(
@@ -976,7 +984,15 @@ export default function ProjectDetailPage() {
                             <div className="flex -space-x-1">
                               {task.assignees?.slice(0, 2).map((a, i) => {
                                 const color = getAvatarColor(a.user.userName);
-                                return (
+                                return a.user.avatar ? (
+                                  <img
+                                    key={i}
+                                    src={a.user.avatar}
+                                    alt={a.user.userName}
+                                    className="w-6 h-6 rounded-full border border-background object-cover"
+                                    title={a.user.userName}
+                                  />
+                                ) : (
                                   <div
                                     key={i}
                                     className={cn(
