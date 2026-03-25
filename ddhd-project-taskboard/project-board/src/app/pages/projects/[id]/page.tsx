@@ -54,6 +54,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 import { CreateTaskDialog } from "@/components/task/create-task-dialog";
+import { TaskDetailDialog } from "@/components/task/task-detail-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
@@ -87,13 +88,14 @@ interface Task {
   status: string;
   priority: string;
   plannedDate?: string;
-  assignees: { user: { id: string; userName: string; avatar?: string } }[];
+  assignees: { user: { id: string; userId: string; userName: string; avatar?: string } }[];
   milestoneId?: string;
   createdAt: string;
 }
 
 interface Assignee {
   id: string;
+  userId: string;
   userName: string;
   avatar?: string;
 }
@@ -127,6 +129,8 @@ export default function ProjectDetailPage() {
   const [newMilestoneDueDate, setNewMilestoneDueDate] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState("P1");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -524,14 +528,16 @@ export default function ProjectDetailPage() {
   };
 
   const getPriorityBadge = (priority: string) => {
-    const colors: Record<string, string> = {
-      "P0": "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-      "P1": "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-      "P2": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    const priorityMap: Record<string, { label: string; color: string }> = {
+      "P0": { label: "紧急重要", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+      "P1": { label: "重要", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
+      "P2": { label: "常规", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+      "P3": { label: "低优先级", color: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400" },
     };
+    const config = priorityMap[priority] || { label: priority, color: "bg-gray-100 text-gray-600" };
     return (
-      <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors[priority] || "bg-gray-100 text-gray-600"}`}>
-        {priority}
+      <span className={`text-[10px] px-1.5 py-0.5 rounded ${config.color}`}>
+        {config.label}
       </span>
     );
   };
@@ -933,11 +939,17 @@ export default function ProjectDetailPage() {
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className={cn(
-                                "text-sm truncate",
-                                task.status === "已完成" && "line-through text-muted-foreground",
-                                task.status === "有风险" && "text-red-600"
-                              )}>
+                              <p
+                                className={cn(
+                                  "text-sm truncate cursor-pointer hover:text-primary",
+                                  task.status === "已完成" && "line-through text-muted-foreground",
+                                  task.status === "有风险" && "text-red-600"
+                                )}
+                                onClick={() => {
+                                  setSelectedTask(task);
+                                  setIsTaskDialogOpen(true);
+                                }}
+                              >
                                 {task.title}
                               </p>
                               {getPriorityBadge(task.priority)}
@@ -1252,6 +1264,16 @@ export default function ProjectDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 任务详情弹窗 */}
+      <TaskDetailDialog
+        task={selectedTask}
+        open={isTaskDialogOpen}
+        onOpenChange={(open) => {
+          setIsTaskDialogOpen(open);
+          if (!open) setSelectedTask(null);
+        }}
+      />
     </div>
   );
 }
