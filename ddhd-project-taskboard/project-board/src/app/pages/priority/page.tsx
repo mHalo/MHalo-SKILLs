@@ -541,7 +541,7 @@ export default function PriorityPage() {
               <SelectContent alignItemWithTrigger={false} >
                 <SelectItem value="all">全部项目</SelectItem>
                 {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
+                  <SelectItem key={project.id} value={project.id} className="mb-1">
                     {project.name}
                   </SelectItem>
                 ))}

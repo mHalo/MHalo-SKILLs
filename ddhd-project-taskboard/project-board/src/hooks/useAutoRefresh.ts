@@ -36,11 +36,13 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
   }, []);
 
   const startCountdown = useCallback(() => {
+    console.log('[useAutoRefresh] startCountdown called');
     setCountdown(AUTO_REFRESH_INTERVAL / 1000);
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
     }
     countdownRef.current = setInterval(() => {
+      console.log('[useAutoRefresh] countdown tick');
       setCountdown((prev) => {
         if (prev <= 1) {
           return AUTO_REFRESH_INTERVAL / 1000;
@@ -51,10 +53,12 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
   }, []);
 
   const handleRefresh = useCallback(async () => {
+    console.log('[useAutoRefresh] handleRefresh called, isRefreshing:', isRefreshing);
     if (isRefreshing) return;
 
     try {
       setIsRefreshing(true);
+      console.log('[useAutoRefresh] 开始刷新数据');
       // Dismiss any existing countdown toast
       if (toastIdRef.current !== null) {
         toast.dismiss(toastIdRef.current);
@@ -85,6 +89,7 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
   }, [isRefreshing, startCountdown]);
 
   useEffect(() => {
+    console.log('[useAutoRefresh] useEffect triggered, enabled:', enabled);
     if (!enabled) {
       clearTimers();
       return;
@@ -95,10 +100,12 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
 
     // Set up the auto-refresh interval
     timerRef.current = setInterval(() => {
+      console.log('[useAutoRefresh] 定时器触发');
       handleRefresh();
     }, AUTO_REFRESH_INTERVAL);
 
     return () => {
+      console.log('[useAutoRefresh] 清理定时器');
       clearTimers();
     };
   }, [enabled, clearTimers, handleRefresh, startCountdown]);

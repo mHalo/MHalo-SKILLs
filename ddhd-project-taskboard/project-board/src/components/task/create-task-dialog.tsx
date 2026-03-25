@@ -198,14 +198,15 @@ export function CreateTaskDialog({
                     : "选择项目"}
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0" align="start">
-                  <ScrollArea className="max-h-[200px]">
+                  <ScrollArea className="h-[200px]">
                     <div className="p-1">
                       {projects.map((project) => (
                         <div
                           key={project.id}
                           className={cn(
                             "flex items-center px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
-                            projectId === project.id && "bg-accent"
+                            projectId === project.id && "bg-accent",
+                            "mb-1"
                           )}
                           onClick={() => {
                             setProjectId(project.id);

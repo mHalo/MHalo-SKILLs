@@ -101,6 +101,11 @@ export default function CalendarPage() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
+  // 调试渲染次数
+  const renderCount = useRef(0);
+  renderCount.current++;
+  console.log(`[Calendar] 渲染次数: ${renderCount.current}, view=${view}, currentDate=${currentDate.toISOString()}`);
+
   // 新建事件表单
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -111,6 +116,7 @@ export default function CalendarPage() {
   });
 
   const fetchCalendarData = useCallback(async () => {
+    console.log(`[Calendar] fetchCalendarData 调用, view=${view}, currentDate=${currentDate.toISOString()}`);
     try {
       setLoading(true);
 

@@ -253,7 +253,7 @@ export default function PeoplePage() {
   const getTaskStats = (user: UserDetail) => {
     const assignees = user.assignees || [];
     const pending = assignees.filter(
-      (a) => a.task.status === "待开始" || a.task.status === "进行中"
+      (a) => a.task.status !== "已完成"
     ).length;
     const completed = assignees.filter(
       (a) => a.task.status === "已完成"
