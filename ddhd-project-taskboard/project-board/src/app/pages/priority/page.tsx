@@ -63,6 +63,7 @@ interface Task {
 interface Project {
   id: string;
   name: string;
+  milestones?: { id: string; name: string }[];
 }
 
 interface QuadrantData {
@@ -111,7 +112,7 @@ export default function PriorityPage() {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch("/api/projects");
+      const res = await fetch("/api/projects?includeDetails=true");
       const data = await res.json();
       if (data.data) {
         setProjects(data.data);
@@ -567,6 +568,8 @@ export default function PriorityPage() {
           if (!open) setEditingTask(null);
         }}
         onSubmit={handleTaskSubmit}
+        projects={projects}
+        milestones={projects.flatMap(p => p.milestones || [])}
         defaultPriority={newTaskPriority}
         submitText={editingTask ? "保存" : "创建"}
         editingTask={editingTask ? {

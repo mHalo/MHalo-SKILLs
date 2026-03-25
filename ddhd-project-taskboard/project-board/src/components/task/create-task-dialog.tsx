@@ -24,6 +24,12 @@ interface Milestone {
   name: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  milestones?: Milestone[];
+}
+
 interface User {
   id: string;
   userName: string;
@@ -44,6 +50,7 @@ interface CreateTaskDialogProps {
     status?: string;
   }) => Promise<void> | void;
   milestones?: Milestone[];
+  projects?: Project[];
   defaultPriority?: string;
   defaultMilestoneId?: string;
   submitText?: string;
@@ -64,6 +71,7 @@ export function CreateTaskDialog({
   onOpenChange,
   onSubmit,
   milestones = [],
+  projects = [],
   defaultPriority = "P1",
   defaultMilestoneId = "",
   submitText = "创建",
@@ -73,6 +81,7 @@ export function CreateTaskDialog({
   const [description, setDescription] = useState(editingTask?.description || "");
   const [priority, setPriority] = useState(editingTask?.priority || defaultPriority);
   const [plannedDate, setPlannedDate] = useState(editingTask?.plannedDate || "");
+  const [projectId, setProjectId] = useState<string>("");
   const [milestoneId, setMilestoneId] = useState(editingTask?.milestoneId || defaultMilestoneId);
   const [assignees, setAssignees] = useState<User[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>(editingTask?.assigneeIds || []);
@@ -80,6 +89,14 @@ export function CreateTaskDialog({
   const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState(editingTask?.status || "待开始");
+
+  // 根据选中的项目筛选里程碑
+  const filteredMilestones = projectId
+    ? milestones.filter((m) => {
+        const project = projects.find((p) => p.id === projectId);
+        return project?.milestones?.some((pm) => pm.id === m.id);
+      })
+    : milestones;
 
   // 获取用户列表
   useEffect(() => {
@@ -110,6 +127,7 @@ export function CreateTaskDialog({
         setMilestoneId(editingTask.milestoneId || defaultMilestoneId);
         setSelectedAssignees(editingTask.assigneeIds || []);
         setStatus(editingTask.status || "待开始");
+        setProjectId("");
       } else {
         setTitle("");
         setDescription("");
@@ -118,6 +136,7 @@ export function CreateTaskDialog({
         setMilestoneId(defaultMilestoneId);
         setSelectedAssignees([]);
         setStatus("待开始");
+        setProjectId("");
       }
       setAssigneeSearch("");
     }
@@ -160,8 +179,51 @@ export function CreateTaskDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4 px-1 max-h-[60vh] overflow-y-auto">
-          {/* 所属里程碑 - 仅当有里程碑列表时显示 */}
-          {milestones.length > 0 && (
+          {/* 所属项目 - 仅当有项目列表时显示 */}
+          {projects.length > 0 && (
+            <div className="space-y-2">
+              <Label>所属项目</Label>
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-start text-left font-normal"
+                    />
+                  }
+                >
+                  {projectId
+                    ? projects.find((p) => p.id === projectId)?.name
+                    : "选择项目"}
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                  <ScrollArea className="max-h-[200px]">
+                    <div className="p-1">
+                      {projects.map((project) => (
+                        <div
+                          key={project.id}
+                          className={cn(
+                            "flex items-center px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
+                            projectId === project.id && "bg-accent"
+                          )}
+                          onClick={() => {
+                            setProjectId(project.id);
+                            setMilestoneId(""); // 清空已选的里程碑
+                          }}
+                        >
+                          <span className="text-sm">{project.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          {/* 所属里程碑 - 当有项目选择时显示筛选后的里程碑 */}
+          {filteredMilestones.length > 0 && (
             <div className="space-y-2">
               <Label>所属里程碑</Label>
               <Popover>
@@ -175,13 +237,13 @@ export function CreateTaskDialog({
                   }
                 >
                   {milestoneId
-                    ? milestones.find((m) => m.id === milestoneId)?.name
+                    ? filteredMilestones.find((m) => m.id === milestoneId)?.name
                     : "选择里程碑（可选）"}
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0" align="start">
                   <ScrollArea className="max-h-[200px]">
                     <div className="p-1">
-                      {milestones.map((milestone) => (
+                      {filteredMilestones.map((milestone) => (
                         <div
                           key={milestone.id}
                           className={cn(
