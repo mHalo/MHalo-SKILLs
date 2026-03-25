@@ -545,6 +545,17 @@ export default function ProjectDetailPage() {
     return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   };
 
+  const getProjectStatus = () => {
+    if (!project?.milestones?.length) return "待开始";
+    const totalTasks = project.milestones.reduce((acc, m) => acc + (m.tasks?.length || 0), 0);
+    const completedTasks = project.milestones.reduce(
+      (acc, m) => acc + (m.tasks?.filter(t => t.status === "已完成").length || 0), 0
+    );
+    if (totalTasks === 0) return "待开始";
+    if (completedTasks === totalTasks) return "已完成";
+    return "进行中";
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -590,7 +601,7 @@ export default function ProjectDetailPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-xl font-semibold truncate">{project.name}</h1>
-                {getStatusBadge(project.status)}
+                {getStatusBadge(getProjectStatus())}
               </div>
               <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                 {project.description || "暂无项目描述"}

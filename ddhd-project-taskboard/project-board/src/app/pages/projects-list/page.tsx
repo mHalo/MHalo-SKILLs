@@ -156,8 +156,8 @@ export default function ProjectsListPage() {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case "进行中": return "bg-brand-success/10 text-brand-success";
-      case "已完成": return "bg-brand-info/10 text-brand-info";
+      case "进行中": return "bg-brand-info/10 text-brand-info";
+      case "已完成": return "bg-brand-success/10 text-brand-success";
       case "暂停": return "bg-brand-warning/10 text-brand-warning";
       default: return "bg-brand-main text-brand-secondary";
     }
@@ -196,7 +196,17 @@ export default function ProjectsListPage() {
       ? Math.round((completedTasks / totalTasks) * 100)
       : 0;
 
-    return { completionRate, completedMilestones, totalMilestones, pendingTasks, atRiskTasks };
+    // 项目状态基于任务完成率计算
+    let computedStatus = "待开始";
+    if (totalTasks === 0) {
+      computedStatus = "待开始";
+    } else if (completedTasks === totalTasks) {
+      computedStatus = "已完成";
+    } else if (pendingTasks > 0 || atRiskTasks > 0) {
+      computedStatus = "进行中";
+    }
+
+    return { completionRate, completedMilestones, totalMilestones, pendingTasks, atRiskTasks, computedStatus };
   };
 
   if (loading) {
@@ -286,8 +296,8 @@ export default function ProjectsListPage() {
                         {project.name}
                       </h3>
                       <div className="flex flex-col items-end gap-1.5">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusStyle(project.status)}`}>
-                          {project.status}
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusStyle(stats.computedStatus)}`}>
+                          {stats.computedStatus}
                         </span>
                         {hasRisk && (
                           <span className="px-2 py-0.5 rounded text-xs font-medium bg-brand-warning/10 text-brand-warning flex items-center gap-1">

@@ -36,9 +36,23 @@ export async function GET(request: NextRequest) {
 
     // 统计数据
     const totalProjects = projects.length;
-    const activeProjects = projects.filter((p) => p.status === "进行中").length;
-    const completedProjects = projects.filter((p) => p.status === "已完成").length;
-    const pausedProjects = projects.filter((p) => p.status === "暂停").length;
+    // 根据任务完成率计算状态
+    const activeProjects = projects.filter((p) => {
+      const totalTasks = p.milestones.reduce((acc, m) => acc + m.tasks.length, 0);
+      const completedTasks = p.milestones.reduce(
+        (acc, m) => acc + m.tasks.filter((t) => t.status === "已完成").length,
+        0
+      );
+      return totalTasks > 0 && completedTasks < totalTasks;
+    }).length;
+    const completedProjects = projects.filter((p) => {
+      const totalTasks = p.milestones.reduce((acc, m) => acc + m.tasks.length, 0);
+      return totalTasks > 0 && p.milestones.every((m) => m.tasks.every((t) => t.status === "已完成"));
+    }).length;
+    const pausedProjects = projects.filter((p) => {
+      const totalTasks = p.milestones.reduce((acc, m) => acc + m.tasks.length, 0);
+      return totalTasks === 0;
+    }).length;
 
     // 任务统计
     let totalTasks = 0;
@@ -103,17 +117,29 @@ export async function GET(request: NextRequest) {
         });
         const members = Array.from(memberMap.values()).slice(0, 5);
 
+        const totalTasks = p.milestones.reduce((acc, m) => acc + m.tasks.length, 0);
+        const completedTasks = p.milestones.reduce(
+          (acc, m) => acc + m.tasks.filter((t) => t.status === "已完成").length,
+          0
+        );
+        // 基于任务完成率计算项目状态
+        let computedStatus = "待开始";
+        if (totalTasks === 0) {
+          computedStatus = "待开始";
+        } else if (completedTasks === totalTasks) {
+          computedStatus = "已完成";
+        } else {
+          computedStatus = "进行中";
+        }
+
         return {
           id: p.id,
           name: p.name,
-          status: p.status,
+          status: computedStatus,
           type: p.type,
           client: p.client,
-          taskCount: p.milestones.reduce((acc, m) => acc + m.tasks.length, 0),
-          completedTaskCount: p.milestones.reduce(
-            (acc, m) => acc + m.tasks.filter((t) => t.status === "已完成").length,
-            0
-          ),
+          taskCount: totalTasks,
+          completedTaskCount: completedTasks,
           milestoneCount: p.milestones.length,
           members: members.map((m) => ({ user: m })),
           updatedAt: p.updatedAt,

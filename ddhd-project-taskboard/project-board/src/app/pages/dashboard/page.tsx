@@ -64,7 +64,7 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.data) {
         setStats(data.data.statistics);
-        setRecentProjects(data.data.projects?.slice(0, 5) || []);
+        setRecentProjects(data.data.projects?.slice(0, 8) || []);
       }
     } catch {
       toast.error("获取数据失败");
@@ -217,8 +217,8 @@ export default function DashboardPage() {
                         </h3>
                         <span className={`
                           px-2 py-0.5 rounded-md text-xs font-medium
-                          ${project.status === '进行中' ? 'bg-brand-success/10 text-brand-success' : ''}
-                          ${project.status === '已完成' ? 'bg-brand-info/10 text-brand-info' : ''}
+                          ${project.status === '进行中' ? 'bg-brand-info/10 text-brand-info' : ''}
+                          ${project.status === '已完成' ? 'bg-brand-success/10 text-brand-success' : ''}
                           ${project.status === '暂停' ? 'bg-brand-warning/10 text-brand-warning' : ''}
                         `}>
                           {project.status}
