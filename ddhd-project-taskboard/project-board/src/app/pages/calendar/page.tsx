@@ -347,6 +347,8 @@ export default function CalendarPage() {
                       "text-[10px] px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80 flex items-center gap-1",
                       task.status === "已完成"
                         ? "bg-green-100 text-green-700"
+                        : task.status === "有风险"
+                        ? "bg-red-100 text-red-700"
                         : "bg-gray-100 text-gray-700"
                     )}
                   >
@@ -450,7 +452,10 @@ export default function CalendarPage() {
                     )}
                   >
                     <CardContent className="p-2">
-                      <div className="text-xs font-medium truncate">
+                      <div className={cn(
+                        "text-xs font-medium truncate",
+                        task.status === "有风险" && "text-red-600"
+                      )}>
                         {task.title}
                       </div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
@@ -542,7 +547,10 @@ export default function CalendarPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium truncate">{item.title}</h3>
+                        <h3 className={cn(
+                          "font-medium truncate",
+                          item.itemType === "task" && (item as Task).status === "有风险" && "text-red-600"
+                        )}>{item.title}</h3>
                         {item.itemType === "event" ? (
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted">
                             {(item as CalendarEvent).eventType}
@@ -553,6 +561,8 @@ export default function CalendarPage() {
                               "text-[10px] px-1.5 py-0.5 rounded",
                               (item as Task).status === "已完成"
                                 ? "bg-green-100 text-green-700"
+                                : (item as Task).status === "有风险"
+                                ? "bg-red-100 text-red-700"
                                 : "bg-blue-100 text-blue-700"
                             )}
                           >
