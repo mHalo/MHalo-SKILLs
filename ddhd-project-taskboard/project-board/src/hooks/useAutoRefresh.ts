@@ -16,6 +16,9 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const toastIdRef = useRef<string | number | null>(null);
+  // 使用 ref 存储 onRefresh，避免依赖变化导致重新渲染
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
 
   const clearTimers = useCallback(() => {
     if (timerRef.current) {
@@ -34,6 +37,9 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
 
   const startCountdown = useCallback(() => {
     setCountdown(AUTO_REFRESH_INTERVAL / 1000);
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+    }
     countdownRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -58,7 +64,7 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
         duration: Infinity,
       });
 
-      await onRefresh();
+      await onRefreshRef.current();
 
       // Dismiss the refreshing toast and show success with countdown
       toast.dismiss(toastIdRef.current);
@@ -76,7 +82,7 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
     } finally {
       setIsRefreshing(false);
     }
-  }, [onRefresh, isRefreshing, startCountdown]);
+  }, [isRefreshing, startCountdown]);
 
   useEffect(() => {
     if (!enabled) {
