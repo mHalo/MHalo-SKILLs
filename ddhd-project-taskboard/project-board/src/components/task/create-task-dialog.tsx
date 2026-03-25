@@ -299,14 +299,14 @@ export function CreateTaskDialog({
                     ? `已选择 ${selectedAssignees.length} 人`
                     : "选择责任人"}
                 </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="start">
+                <PopoverContent className="w-[280px] p-0 overflow-hidden" align="start">
                   <Input
                     placeholder="搜索责任人..."
                     value={assigneeSearch}
                     onChange={(e) => setAssigneeSearch(e.target.value)}
                     className="border-0 border-b rounded-none"
                   />
-                  <ScrollArea className="max-h-[200px]">
+                  <ScrollArea className="h-[200px]">
                     <div className="p-1">
                       {filteredAssignees.length === 0 ? (
                         <p className="py-2 px-2 text-sm text-muted-foreground">未找到责任人</p>
@@ -410,7 +410,6 @@ export function CreateTaskDialog({
                         setPlannedDate("");
                       }
                     }}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
