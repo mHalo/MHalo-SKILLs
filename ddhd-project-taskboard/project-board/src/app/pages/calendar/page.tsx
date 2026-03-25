@@ -57,6 +57,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@base-ui/react";
 import { TaskDetailDialog } from "@/components/task/task-detail-dialog";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 
 type CalendarView = "day" | "week" | "month";
 
@@ -83,7 +84,7 @@ interface Task {
   description?: string;
   plannedDate?: string;
   actualDate?: string;
-  assignees?: { user: { userName: string; avatar?: string } }[];
+  assignees?: { user: { id: string; userId: string; userName: string; avatar?: string } }[];
   milestone?: { name: string; project: { id: string; name: string } };
 }
 
@@ -232,8 +233,6 @@ export default function CalendarPage() {
     else if (view === "week") setCurrentDate(addWeeks(currentDate, 1));
     else setCurrentDate(addDays(currentDate, 1));
   };
-
-  const goToToday = () => setCurrentDate(new Date());
 
   // 获取日期范围内的所有天
   const calendarDays = useMemo(() => {
@@ -417,7 +416,7 @@ export default function CalendarPage() {
                   <Card
                     key={event.id}
                     onClick={() => handleEventClick(event)}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    className="cursor-pointer hover:shadow-md transition-shadow p-0"
                   >
                     <CardContent className="p-2">
                       <div
@@ -448,7 +447,8 @@ export default function CalendarPage() {
                     onClick={() => handleTaskClick(task)}
                     className={cn(
                       "cursor-pointer hover:shadow-md transition-shadow",
-                      task.status === "已完成" && "bg-green-50"
+                      task.status === "已完成" && "bg-green-50",
+                      "p-0"
                     )}
                   >
                     <CardContent className="p-2">
@@ -463,14 +463,21 @@ export default function CalendarPage() {
                       </div>
                       {task.assignees && task.assignees.length > 0 && (
                         <div className="flex items-center gap-1 mt-1">
-                          {task.assignees.slice(0, 2).map((a, i) => (
-                            <div
-                              key={i}
-                              className="w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[8px]"
-                            >
-                              {a.user.userName.slice(0, 1)}
-                            </div>
-                          ))}
+                          {task.assignees.slice(0, 2).map((a, i) => {
+                            const color = getAvatarColor(a.user.userName);
+                            return (
+                              <div
+                                key={i}
+                                className={cn(
+                                  "w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-medium",
+                                  color.bg,
+                                  color.text
+                                )}
+                              >
+                                {getInitials(a.user.userName)}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </CardContent>
