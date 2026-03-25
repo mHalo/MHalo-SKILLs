@@ -439,7 +439,7 @@ export function CreateTaskDialog({
                 className={cn(
                   "px-3 py-2 text-xs rounded-md transition-all cursor-pointer flex-1",
                   status === "待开始"
-                    ? "bg-[#637CFF] text-white"
+                    ? "text-white bg-gray-400 "
                     : "text-[#7E8485] hover:bg-gray-50"
                 )}
                 onClick={() => setStatus("待开始")}
