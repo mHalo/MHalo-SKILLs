@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 interface DashboardStats {
   projects: {
@@ -71,6 +72,12 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+
+  // 5分钟自动刷新
+  useAutoRefresh({
+    onRefresh: fetchDashboardData,
+    enabled: true,
+  });
 
   if (loading) {
     return (

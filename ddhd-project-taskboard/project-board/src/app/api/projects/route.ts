@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type");
     const includeArchived = searchParams.get("includeArchived");
     const showArchivedOnly = searchParams.get("showArchivedOnly") === "true";
+    const includeDetails = searchParams.get("includeDetails") === "true";
 
     const where: Prisma.ProjectWhereInput = {};
     if (status) where.status = status;
@@ -38,6 +39,20 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        ...(includeDetails && {
+          milestones: {
+            orderBy: { order: "asc" },
+            include: {
+              tasks: {
+                orderBy: { createdAt: "asc" },
+                select: {
+                  status: true,
+                  priority: true,
+                },
+              },
+            },
+          },
+        }),
       },
       orderBy: {
         createdAt: "desc",

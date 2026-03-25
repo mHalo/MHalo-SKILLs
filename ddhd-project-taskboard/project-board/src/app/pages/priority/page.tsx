@@ -34,6 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 interface Task {
   id: string;
@@ -119,6 +120,15 @@ export default function PriorityPage() {
       toast.error("获取项目列表失败");
     }
   };
+
+  // 5分钟自动刷新
+  useAutoRefresh({
+    onRefresh: async () => {
+      await fetchTasks();
+      await fetchProjects();
+    },
+    enabled: true,
+  });
 
   const handleTaskStatusToggle = (task: Task) => {
     const newStatus = task.status === "已完成" ? "待开始" : "已完成";

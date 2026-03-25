@@ -56,6 +56,7 @@ import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 import { CreateTaskDialog } from "@/components/task/create-task-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 interface Project {
   id: string;
@@ -165,6 +166,12 @@ export default function ProjectDetailPage() {
       if (showLoading) setLoading(false);
     }
   };
+
+  // 5分钟自动刷新
+  useAutoRefresh({
+    onRefresh: () => fetchProject(false),
+    enabled: true,
+  });
 
   const selectedMilestone = useMemo(() => {
     return project?.milestones?.find(m => m.id === selectedMilestoneId);

@@ -26,6 +26,7 @@ import { TaskDetailDialog } from "@/components/task/task-detail-dialog";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 interface User {
   userId: string;
@@ -53,6 +54,13 @@ interface Task {
 
 interface UserDetail extends User {
   assignees: {
+    task: Task;
+    role: string;
+  }[];
+}
+
+interface UserAPIResponse extends User {
+  assignedTasks?: {
     task: Task;
     role: string;
   }[];
@@ -112,25 +120,18 @@ export default function PeoplePage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/users");
+      // 使用 includeDetails=true 获取完整任务数据，避免 N+1 查询
+      const res = await fetch("/api/users?includeDetails=true");
       const data = await res.json();
       if (data.data) {
-        const usersWithDetails = await Promise.all(
-          data.data.map(async (u: User) => {
-            const detailRes = await fetch(`/api/users/${u.userId}`);
-            const detailData = await detailRes.json();
-            if (detailData.data) {
-              // Map assignedTasks to assignees for frontend compatibility
-              const { assignedTasks, ...rest } = detailData.data;
-              return {
-                ...u,
-                ...rest,
-                assignees: assignedTasks || [],
-              };
-            }
-            return { ...u, assignees: [] };
-          })
-        );
+        // Map assignedTasks to assignees for frontend compatibility
+        const usersWithDetails = data.data.map((u: UserAPIResponse) => {
+          const { assignedTasks, ...rest } = u;
+          return {
+            ...rest,
+            assignees: assignedTasks || [],
+          };
+        });
         setUsers(usersWithDetails);
       }
     } catch {
@@ -139,6 +140,12 @@ export default function PeoplePage() {
       setLoading(false);
     }
   };
+
+  // 5分钟自动刷新
+  useAutoRefresh({
+    onRefresh: fetchUsers,
+    enabled: true,
+  });
 
   const openUserEdit = (user: UserDetail) => {
     setEditingUser(user);

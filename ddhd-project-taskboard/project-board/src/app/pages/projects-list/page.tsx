@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 interface Project {
   id: string;
@@ -63,23 +64,16 @@ export default function ProjectsListPage() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      let url = "/api/projects";
+      let url = "/api/projects?includeDetails=true";
       if (activeTab === "archived") {
-        url += "?showArchivedOnly=true";
+        url += "&showArchivedOnly=true";
       } else if (activeTab === "all") {
-        url += "?status=进行中";
+        url += "&status=进行中";
       }
       const res = await fetch(url);
       const data = await res.json();
       if (data.data) {
-        const projectsWithDetails = await Promise.all(
-          data.data.map(async (p: Project) => {
-            const detailRes = await fetch(`/api/projects/${p.id}`);
-            const detailData = await detailRes.json();
-            return { ...p, ...detailData.data };
-          })
-        );
-        setProjects(projectsWithDetails);
+        setProjects(data.data);
       }
     } catch {
       toast.error("获取项目列表失败");
@@ -87,6 +81,12 @@ export default function ProjectsListPage() {
       setLoading(false);
     }
   };
+
+  // 5分钟自动刷新
+  useAutoRefresh({
+    onRefresh: fetchProjects,
+    enabled: true,
+  });
 
   const handleArchive = (project: Project, e: React.MouseEvent) => {
     e.preventDefault();

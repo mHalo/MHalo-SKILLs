@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
     const status = searchParams.get("status");
+    const includeDetails = searchParams.get("includeDetails") === "true";
 
     const where: Prisma.UserWhereInput = {};
     if (role) where.role = role;
@@ -22,6 +23,36 @@ export async function GET(request: NextRequest) {
             projects: true,
           },
         },
+        ...(includeDetails && {
+          assignedTasks: {
+            where: {
+              task: { milestone: { project: { archived: false } } },
+            },
+            include: {
+              task: {
+                include: {
+                  milestone: {
+                    include: {
+                      project: true,
+                    },
+                  },
+                  assignees: {
+                    include: {
+                      user: {
+                        select: {
+                          id: true,
+                          userName: true,
+                          avatar: true,
+                          role: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }),
       },
       orderBy: {
         createdAt: "desc",

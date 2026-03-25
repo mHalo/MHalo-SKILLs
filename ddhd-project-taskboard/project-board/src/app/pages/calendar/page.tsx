@@ -56,6 +56,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@base-ui/react";
 import { TaskDetailDialog } from "@/components/task/task-detail-dialog";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 type CalendarView = "day" | "week" | "month";
 
@@ -146,15 +147,8 @@ export default function CalendarPage() {
 
       if (eventsData.data) setEvents(eventsData.data);
       if (tasksData.data) {
-        // 获取任务详情
-        const tasksWithDetails = await Promise.all(
-          tasksData.data.map(async (t: Task) => {
-            const detailRes = await fetch(`/api/tasks/${t.id}`);
-            const detailData = await detailRes.json();
-            return { ...t, ...detailData.data };
-          })
-        );
-        setTasks(tasksWithDetails.filter((t: Task) => t.plannedDate));
+        // API已返回完整数据（包含milestone和assignees），直接使用
+        setTasks(tasksData.data.filter((t: Task) => t.plannedDate));
       }
     } catch {
       toast.error("获取日历数据失败");
@@ -172,6 +166,12 @@ export default function CalendarPage() {
       console.error("获取项目列表失败");
     }
   };
+
+  // 5分钟自动刷新
+  useAutoRefresh({
+    onRefresh: fetchCalendarData,
+    enabled: true,
+  });
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
