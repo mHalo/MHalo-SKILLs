@@ -465,7 +465,14 @@ export default function CalendarPage() {
                         <div className="flex items-center gap-1 mt-1">
                           {task.assignees.slice(0, 2).map((a, i) => {
                             const color = getAvatarColor(a.user.userName);
-                            return (
+                            return a.user.avatar ? (
+                              <img
+                                key={i}
+                                src={a.user.avatar}
+                                alt={a.user.userName}
+                                className="w-4 h-4 rounded-full object-cover"
+                              />
+                            ) : (
                               <div
                                 key={i}
                                 className={cn(
