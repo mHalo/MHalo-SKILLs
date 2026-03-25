@@ -76,7 +76,7 @@ interface Milestone {
   name: string;
   description: string | null;
   status: string;
-  dueDate: string | null;
+  deadline: string | null;
   tasks: Task[];
   order: number;
 }
@@ -266,6 +266,7 @@ export default function ProjectDetailPage() {
     plannedDate?: string;
     assigneeIds?: string[];
     milestoneId?: string;
+    status?: string;
   }) => {
     if (!taskData.milestoneId) {
       toast.error("请选择里程碑");
@@ -282,7 +283,7 @@ export default function ProjectDetailPage() {
           description: taskData.description,
           milestoneId: taskData.milestoneId,
           priority: taskData.priority,
-          status: "待开始",
+          status: taskData.status || "待开始",
           plannedDate: taskData.plannedDate,
           assignees: taskData.assigneeIds?.map((userId) => ({ userId })) || [],
         }),
@@ -385,7 +386,7 @@ export default function ProjectDetailPage() {
   const openEditMilestoneDialog = (milestone: Milestone) => {
     setEditingMilestone(milestone);
     setEditMilestoneName(milestone.name);
-    setEditMilestoneDueDate(milestone.dueDate || "");
+    setEditMilestoneDueDate(milestone.deadline || "");
     setIsEditMilestoneDialogOpen(true);
   };
 
@@ -530,9 +531,9 @@ export default function ProjectDetailPage() {
   const getPriorityBadge = (priority: string) => {
     const priorityMap: Record<string, { label: string; color: string }> = {
       "P0": { label: "紧急重要", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-      "P1": { label: "重要", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-      "P2": { label: "常规", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-      "P3": { label: "低优先级", color: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400" },
+      "P1": { label: "紧急不重要", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
+      "P2": { label: "重要不紧急", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+      "P3": { label: "不紧急不重要", color: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400" },
     };
     const config = priorityMap[priority] || { label: priority, color: "bg-gray-100 text-gray-600" };
     return (
@@ -763,8 +764,8 @@ export default function ProjectDetailPage() {
                                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                     <span className="flex items-center gap-1">
                                       <CalendarIcon size={11} />
-                                      {milestone.dueDate
-                                        ? new Date(milestone.dueDate).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })
+                                      {milestone.deadline
+                                        ? new Date(milestone.deadline).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })
                                         : "无截止"
                                       }
                                     </span>
@@ -850,8 +851,8 @@ export default function ProjectDetailPage() {
                       <p className="text-xs text-muted-foreground flex items-center gap-2 mt-2">
                         <span className="flex items-center gap-1">
                           <CalendarIcon size={11} />
-                          {selectedMilestone.dueDate
-                            ? new Date(selectedMilestone.dueDate).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })
+                          {selectedMilestone.deadline
+                            ? new Date(selectedMilestone.deadline).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })
                             : "无截止"}
                         </span>
                         <span>
@@ -929,7 +930,7 @@ export default function ProjectDetailPage() {
                           : "bg-card"
                       )}
                     >
-                      <CardContent className="p-3">
+                      <CardContent className="p-3 py-0">
                         <div className="flex items-center gap-3">
                           <div
                             role="checkbox"
@@ -960,28 +961,9 @@ export default function ProjectDetailPage() {
                               >
                                 {task.title}
                               </p>
-                              {getPriorityBadge(task.priority)}
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(task.createdAt).toLocaleDateString("zh-CN")}
-                              </span>
-                              <span className={cn(
-                                "text-[10px] px-1.5 py-0.5 rounded",
-                                task.status === "已完成" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                                task.status === "进行中" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-                                task.status === "有风险" && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-                                task.status === "已延期" && "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-                                task.status === "暂停" && "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
-                                task.status === "待开始" && "bg-gray-100 text-gray-500 dark:bg-gray-900/30 dark:text-gray-500",
-                              )}>
-                                {task.status}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="flex -space-x-1">
+                            <div className="flex items-center gap-2 mt-2">
+                                <div className="flex -space-x-1">
                               {task.assignees?.slice(0, 2).map((a, i) => {
                                 const color = getAvatarColor(a.user.userName);
                                 return a.user.avatar ? (
@@ -1008,16 +990,38 @@ export default function ProjectDetailPage() {
                               })}
                               {task.assignees?.length === 0 && (
                                 <div className="w-6 h-6 rounded-full border border-dashed border-muted-foreground/50 flex items-center justify-center">
-                                  <span className="text-[10px] text-muted-foreground">?</span>
+                                  <span className="text-[10px] text-muted-foreground">无</span>
                                 </div>
                               )}
                             </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded",
+                                task.status === "已完成" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                                task.status === "进行中" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                                task.status === "有风险" && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                                task.status === "已延期" && "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+                                task.status === "暂停" && "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+                                task.status === "待开始" && "bg-gray-100 text-gray-500 dark:bg-gray-900/30 dark:text-gray-500",
+                              )}>
+                                {task.status}
+                              </span>
+                              {getPriorityBadge(task.priority)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(task.createdAt).toLocaleDateString("zh-CN")}
+                            </span>
                             
                             <DropdownMenu>
                               <DropdownMenuTrigger 
-                                className="h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted"
+                                className="h-8 w-8 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-gray-100 hover:bg-gray-200 cursor-pointer"
                               >
                                 <MoreHorizontal size={14} />
+
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem
@@ -1033,14 +1037,14 @@ export default function ProjectDetailPage() {
                                     });
                                     setIsCreateDialogOpen(true);
                                   }}
-                                  className="text-xs"
+                                  className="text-sm cursor-pointer"
                                 >
                                   <Edit size={12} className="mr-2" />
                                   编辑任务
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => openConfirmDialog("toggle", task)}
-                                  className="text-xs"
+                                  className="text-sm mt-1 cursor-pointer"
                                 >
                                   {task.status === "已完成" ? (
                                     <><Clock size={12} className="mr-2" /> 标记为未完成</>
@@ -1050,7 +1054,7 @@ export default function ProjectDetailPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   onClick={() => openConfirmDialog("delete", task)}
-                                  className="text-xs text-red-600 focus:text-red-600"
+                                  className="text-sm mt-1 cursor-pointer text-red-600 focus:bg-red-100"
                                 >
                                   <Trash2 size={12} className="mr-2" />
                                   删除任务
