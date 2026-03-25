@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -110,19 +110,10 @@ export default function CalendarPage() {
     description: "",
   });
 
-  useEffect(() => {
-    fetchCalendarData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate, view]);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchCalendarData = async () => {
+  const fetchCalendarData = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // 计算日期范围
       let start, end;
       if (view === "month") {
@@ -156,9 +147,9 @@ export default function CalendarPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [view, currentDate]);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const res = await fetch("/api/projects");
       const data = await res.json();
@@ -166,7 +157,15 @@ export default function CalendarPage() {
     } catch {
       console.error("获取项目列表失败");
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCalendarData();
+  }, [fetchCalendarData]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   // 5分钟自动刷新
   useAutoRefresh({
@@ -546,7 +545,7 @@ export default function CalendarPage() {
             allItems.map((item, index) => (
               <Card
                 key={index}
-                className="hover:shadow-md transition-shadow cursor-pointer"
+                className="hover:shadow-md transition-shadow cursor-pointer p-0"
                 onClick={() => {
                   if (item.itemType === "task") handleTaskClick(item as Task);
                   else handleEventClick(item as CalendarEvent);
@@ -576,8 +575,22 @@ export default function CalendarPage() {
                           "font-medium truncate",
                           item.itemType === "task" && (item as Task).status === "有风险" && "text-red-600"
                         )}>{item.title}</h3>
+                      </div>
+                      {"description" in item && item.description && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {item.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 mt-2">
                         {item.itemType === "event" ? (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted">
+                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded",
+                            item.itemType === "event"
+                            ? "eventType" in item && item.eventType === "会议"
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-amber-100 text-amber-600"
+                            : "bg-gray-100 text-gray-600"
+                            )}
+                          >
                             {(item as CalendarEvent).eventType}
                           </span>
                         ) : (
@@ -606,11 +619,6 @@ export default function CalendarPage() {
                           </>
                         )}
                       </div>
-                      {"description" in item && item.description && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {item.description}
-                        </p>
-                      )}
                       {"notes" in item && (item as CalendarEvent).notes && (
                         <p className="text-sm text-muted-foreground mt-1">
                           {(item as CalendarEvent).notes}
@@ -631,32 +639,34 @@ export default function CalendarPage() {
                             {item.project.name}
                           </span>
                         )}
-                        {"assignees" in item &&
-                          (item as Task).assignees &&
-                          (item as Task).assignees!.length > 0 && (
-                            <div className="flex items-center gap-1">
-                              {(item as Task).assignees!.slice(0, 3).map((a, i) => (
-                                a.user.avatar ? (
-                                  <img
-                                    key={i}
-                                    src={a.user.avatar}
-                                    alt={a.user.userName}
-                                    className="w-5 h-5 rounded-full object-cover"
-                                    title={a.user.userName}
-                                  />
-                                ) : (
-                                  <div
-                                    key={i}
-                                    className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px]"
-                                    title={a.user.userName}
-                                  >
-                                    {a.user.userName.slice(0, 1)}
-                                  </div>
-                                )
-                              ))}
-                            </div>
-                          )}
                       </div>
+                    </div>
+                    <div className="flex items-center justify-center h-full">
+                      {"assignees" in item &&
+                        (item as Task).assignees &&
+                        (item as Task).assignees!.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            {(item as Task).assignees!.slice(0, 3).map((a, i) => (
+                              a.user.avatar ? (
+                                <img
+                                  key={i}
+                                  src={a.user.avatar}
+                                  alt={a.user.userName}
+                                  className="w-5 h-5 rounded-full object-cover"
+                                  title={a.user.userName}
+                                />
+                              ) : (
+                                <div
+                                  key={i}
+                                  className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px]"
+                                  title={a.user.userName}
+                                >
+                                  {a.user.userName.slice(0, 1)}
+                                </div>
+                              )
+                            ))}
+                          </div>
+                        )}
                     </div>
                   </div>
                 </CardContent>
