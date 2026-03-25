@@ -316,6 +316,23 @@ export default function PeoplePage() {
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "进行中":
+        return <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">进行中</span>;
+      case "有风险":
+        return <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700">有风险</span>;
+      case "已延期":
+        return <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">已延期</span>;
+      case "暂停":
+        return <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">暂停</span>;
+      case "待开始":
+        return <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">待开始</span>;
+      default:
+        return null;
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -460,7 +477,10 @@ export default function PeoplePage() {
                           >
                             {getPriorityDot(task.priority)}
                             <div className="flex-1 min-w-0">
-                              <span className="text-sm font-medium truncate block">
+                              <span className={cn(
+                                "text-sm font-medium truncate block",
+                                task.status === "有风险" && "text-red-600"
+                              )}>
                                 {task.title}
                               </span>
                               <Link
@@ -471,6 +491,7 @@ export default function PeoplePage() {
                                 {task.milestone?.project?.name}
                               </Link>
                             </div>
+                            {getStatusBadge(task.status)}
                           </div>
                         ))}
                       </div>
