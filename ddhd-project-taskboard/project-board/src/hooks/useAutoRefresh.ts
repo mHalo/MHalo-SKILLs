@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 
 const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -11,11 +11,9 @@ interface UseAutoRefreshOptions {
 }
 
 export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOptions) {
-  const [countdown, setCountdown] = useState(AUTO_REFRESH_INTERVAL / 1000);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const toastIdRef = useRef<string | number | null>(null);
+  const isRefreshingRef = useRef(false);
   // 使用 ref 存储 onRefresh，避免依赖变化导致重新渲染
   const onRefreshRef = useRef(onRefresh);
   onRefreshRef.current = onRefresh;
@@ -25,40 +23,17 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current);
-      countdownRef.current = null;
-    }
     if (toastIdRef.current !== null) {
       toast.dismiss(toastIdRef.current);
       toastIdRef.current = null;
     }
   }, []);
 
-  const startCountdown = useCallback(() => {
-    console.log('[useAutoRefresh] startCountdown called');
-    setCountdown(AUTO_REFRESH_INTERVAL / 1000);
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current);
-    }
-    countdownRef.current = setInterval(() => {
-      console.log('[useAutoRefresh] countdown tick');
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          return AUTO_REFRESH_INTERVAL / 1000;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, []);
-
   const handleRefresh = useCallback(async () => {
-    console.log('[useAutoRefresh] handleRefresh called, isRefreshing:', isRefreshing);
-    if (isRefreshing) return;
+    if (isRefreshingRef.current) return;
+    isRefreshingRef.current = true;
 
     try {
-      setIsRefreshing(true);
-      console.log('[useAutoRefresh] 开始刷新数据');
       // Dismiss any existing countdown toast
       if (toastIdRef.current !== null) {
         toast.dismiss(toastIdRef.current);
@@ -70,49 +45,38 @@ export function useAutoRefresh({ onRefresh, enabled = true }: UseAutoRefreshOpti
 
       await onRefreshRef.current();
 
-      // Dismiss the refreshing toast and show success with countdown
+      // Dismiss the refreshing toast and show success
       toast.dismiss(toastIdRef.current);
       toastIdRef.current = toast.success(`数据已刷新，下次刷新在 ${AUTO_REFRESH_INTERVAL / 1000}秒 后`, {
         duration: 3000,
       });
-
-      // Reset countdown
-      startCountdown();
     } catch (error) {
       if (toastIdRef.current !== null) {
         toast.dismiss(toastIdRef.current);
       }
       toast.error("数据刷新失败");
     } finally {
-      setIsRefreshing(false);
+      isRefreshingRef.current = false;
     }
-  }, [isRefreshing, startCountdown]);
+  }, []);
 
   useEffect(() => {
-    console.log('[useAutoRefresh] useEffect triggered, enabled:', enabled);
     if (!enabled) {
       clearTimers();
       return;
     }
 
-    // Start the countdown
-    startCountdown();
-
     // Set up the auto-refresh interval
     timerRef.current = setInterval(() => {
-      console.log('[useAutoRefresh] 定时器触发');
       handleRefresh();
     }, AUTO_REFRESH_INTERVAL);
 
     return () => {
-      console.log('[useAutoRefresh] 清理定时器');
       clearTimers();
     };
-  }, [enabled, clearTimers, handleRefresh, startCountdown]);
+  }, [enabled, clearTimers, handleRefresh]);
 
   return {
-    countdown,
-    isRefreshing,
     triggerRefresh: handleRefresh,
   };
 }
