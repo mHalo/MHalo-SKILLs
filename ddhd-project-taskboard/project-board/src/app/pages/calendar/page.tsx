@@ -271,15 +271,23 @@ export default function CalendarPage() {
     return { events: dayEvents, tasks: dayTasks };
   };
 
-  // 统计信息
+  // 统计信息 - 只统计当前视图范围内的数据
   const stats = useMemo(() => {
-    return {
-      totalEvents: events.length,
-      totalTasks: tasks.length,
-      meetings: events.filter((e) => e.eventType === "会议").length,
-      deadlines: events.filter((e) => e.eventType === "截止日").length,
-    };
-  }, [events, tasks]);
+    let totalEvents = 0;
+    let totalTasks = 0;
+    let meetings = 0;
+    let deadlines = 0;
+
+    calendarDays.forEach((day) => {
+      const { events: dayEvents, tasks: dayTasks } = getItemsForDay(day);
+      totalEvents += dayEvents.length;
+      totalTasks += dayTasks.length;
+      meetings += dayEvents.filter((e) => e.eventType === "会议").length;
+      deadlines += dayEvents.filter((e) => e.eventType === "截止日").length;
+    });
+
+    return { totalEvents, totalTasks, meetings, deadlines };
+  }, [calendarDays, events, tasks]);
 
   // 月视图
   const MonthView = () => (
@@ -307,7 +315,7 @@ export default function CalendarPage() {
             <div
               key={index}
               className={cn(
-                "min-h-[100px] border-b border-r p-1.5 transition-colors",
+                "min-h-[130px] border-b border-r p-1.5 transition-colors",
                 !isCurrentMonth && "bg-muted/30",
                 isTodayDate && "bg-primary/5"
               )}
@@ -333,7 +341,7 @@ export default function CalendarPage() {
 
               {/* 事件和任务 */}
               <div className="space-y-1">
-                {dayEvents.slice(0, 2).map((event) => (
+                {dayEvents.map((event) => (
                   <div
                     key={event.id}
                     onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
@@ -348,7 +356,7 @@ export default function CalendarPage() {
                     {event.title}
                   </div>
                 ))}
-                {dayTasks.slice(0, 2).map((task) => (
+                {dayTasks.map((task) => (
                   <div
                     key={task.id}
                     onClick={(e) => { e.stopPropagation(); handleTaskClick(task); }}
@@ -365,11 +373,6 @@ export default function CalendarPage() {
                     {task.title}
                   </div>
                 ))}
-                {dayEvents.length + dayTasks.length > 4 && (
-                  <div className="text-[10px] text-muted-foreground text-center">
-                    +{dayEvents.length + dayTasks.length - 4} 更多
-                  </div>
-                )}
               </div>
             </div>
           );
@@ -641,7 +644,7 @@ export default function CalendarPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center justify-center h-full">
+                    <div className="self-center">
                       {"assignees" in item &&
                         (item as Task).assignees &&
                         (item as Task).assignees!.length > 0 && (
@@ -652,13 +655,13 @@ export default function CalendarPage() {
                                   key={i}
                                   src={a.user.avatar}
                                   alt={a.user.userName}
-                                  className="w-5 h-5 rounded-full object-cover"
+                                  className="w-8 h-8 rounded-full object-cover"
                                   title={a.user.userName}
                                 />
                               ) : (
                                 <div
                                   key={i}
-                                  className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px]"
+                                  className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-[10px]"
                                   title={a.user.userName}
                                 >
                                   {a.user.userName.slice(0, 1)}
