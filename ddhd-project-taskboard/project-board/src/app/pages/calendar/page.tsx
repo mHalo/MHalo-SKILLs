@@ -277,6 +277,8 @@ export default function CalendarPage() {
     let totalTasks = 0;
     let meetings = 0;
     let deadlines = 0;
+    let visits = 0;
+    let reviews = 0;
 
     calendarDays.forEach((day) => {
       const { events: dayEvents, tasks: dayTasks } = getItemsForDay(day);
@@ -284,9 +286,11 @@ export default function CalendarPage() {
       totalTasks += dayTasks.length;
       meetings += dayEvents.filter((e) => e.eventType === "会议").length;
       deadlines += dayEvents.filter((e) => e.eventType === "截止日").length;
+      visits += dayEvents.filter((e) => e.eventType === "拜访").length;
+      reviews += dayEvents.filter((e) => e.eventType === "评审").length;
     });
 
-    return { totalEvents, totalTasks, meetings, deadlines };
+    return { totalEvents, totalTasks, meetings, deadlines, visits, reviews };
   }, [calendarDays, events, tasks]);
 
   // 月视图
@@ -698,37 +702,15 @@ export default function CalendarPage() {
   return (
     <div className="space-y-4 h-full flex flex-col max-w-7xl mx-auto">
       {/* 顶部统计 */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-3 flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">全部事项</p>
-              <p className="text-2xl font-bold">{stats.totalEvents + stats.totalTasks}</p>
-            </div>
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <CalendarIcon size={20} className="text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">会议</p>
-              <p className="text-2xl font-bold">{stats.meetings}</p>
+              <p className="text-xs text-muted-foreground">日程</p>
+              <p className="text-2xl font-bold">{stats.totalEvents}</p>
             </div>
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Clock size={20} className="text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">截止日</p>
-              <p className="text-2xl font-bold">{stats.deadlines}</p>
-            </div>
-            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-              <CalendarIcon size={20} className="text-red-600" />
+              <CalendarIcon size={20} className="text-blue-600" />
             </div>
           </CardContent>
         </Card>
@@ -740,6 +722,17 @@ export default function CalendarPage() {
             </div>
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
               <Briefcase size={20} className="text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">全部事项</p>
+              <p className="text-2xl font-bold">{stats.totalEvents + stats.totalTasks}</p>
+            </div>
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <CalendarIcon size={20} className="text-primary" />
             </div>
           </CardContent>
         </Card>
