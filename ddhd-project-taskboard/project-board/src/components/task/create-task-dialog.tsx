@@ -99,7 +99,7 @@ export function CreateTaskDialog({
     }
   }, [open]);
 
-  // 重置表单
+  // 重置表单 - 使用 editingTask?.id 作为依赖，避免对象引用变化导致重复渲染
   useEffect(() => {
     if (open) {
       if (editingTask) {
@@ -121,7 +121,7 @@ export function CreateTaskDialog({
       }
       setAssigneeSearch("");
     }
-  }, [open, defaultPriority, defaultMilestoneId, editingTask]);
+  }, [open, defaultPriority, defaultMilestoneId, editingTask?.id]);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
