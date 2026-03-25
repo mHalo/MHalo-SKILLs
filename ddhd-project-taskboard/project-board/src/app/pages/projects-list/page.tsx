@@ -165,20 +165,35 @@ export default function ProjectsListPage() {
 
   const getProjectStats = (project: Project) => {
     const milestones = project.milestones || [];
-    const completedMilestones = milestones.filter(m => m.status === "已完成").length;
     const totalMilestones = milestones.length;
-    
+
+    let totalTasks = 0;
+    let completedTasks = 0;
     let pendingTasks = 0;
     let atRiskTasks = 0;
+    let completedMilestones = 0;
+
     milestones.forEach(m => {
+      const milestoneTaskCount = m.tasks?.length || 0;
+      const milestoneCompletedTaskCount = m.tasks?.filter(t => t.status === "已完成").length || 0;
+
+      totalTasks += milestoneTaskCount;
+      completedTasks += milestoneCompletedTaskCount;
+
+      // 里程碑下所有任务都完成时，里程碑才算完成
+      if (milestoneTaskCount > 0 && milestoneCompletedTaskCount === milestoneTaskCount) {
+        completedMilestones++;
+      }
+
       m.tasks?.forEach(t => {
         if (t.status === "待开始" || t.status === "进行中") pendingTasks++;
         if (t.status === "有风险" || t.status === "已延期") atRiskTasks++;
       });
     });
 
-    const completionRate = totalMilestones > 0 
-      ? Math.round((completedMilestones / totalMilestones) * 100) 
+    // 进度基于任务完成率计算
+    const completionRate = totalTasks > 0
+      ? Math.round((completedTasks / totalTasks) * 100)
       : 0;
 
     return { completionRate, completedMilestones, totalMilestones, pendingTasks, atRiskTasks };
@@ -276,7 +291,6 @@ export default function ProjectsListPage() {
                         </span>
                         {hasRisk && (
                           <span className="px-2 py-0.5 rounded text-xs font-medium bg-brand-warning/10 text-brand-warning flex items-center gap-1">
-                            <AlertCircle size={10} strokeWidth={1.5} />
                             有风险
                           </span>
                         )}
