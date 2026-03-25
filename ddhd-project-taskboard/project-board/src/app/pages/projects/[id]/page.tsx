@@ -935,7 +935,8 @@ export default function ProjectDetailPage() {
                             <div className="flex items-center gap-2">
                               <p className={cn(
                                 "text-sm truncate",
-                                task.status === "已完成" && "line-through text-muted-foreground"
+                                task.status === "已完成" && "line-through text-muted-foreground",
+                                task.status === "有风险" && "text-red-600"
                               )}>
                                 {task.title}
                               </p>
@@ -945,15 +946,17 @@ export default function ProjectDetailPage() {
                               <span className="text-xs text-muted-foreground">
                                 {new Date(task.createdAt).toLocaleDateString("zh-CN")}
                               </span>
-                              {task.status !== "已完成" && task.status !== "待开始" && (
-                                <span className={cn(
-                                  "text-[10px] px-1.5 py-0.5 rounded",
-                                  task.status === "进行中" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-                                  task.status === "有风险" && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-                                )}>
-                                  {task.status}
-                                </span>
-                              )}
+                              <span className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded",
+                                task.status === "已完成" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                                task.status === "进行中" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                                task.status === "有风险" && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                                task.status === "已延期" && "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+                                task.status === "暂停" && "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+                                task.status === "待开始" && "bg-gray-100 text-gray-500 dark:bg-gray-900/30 dark:text-gray-500",
+                              )}>
+                                {task.status}
+                              </span>
                             </div>
                           </div>
                           
