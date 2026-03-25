@@ -221,6 +221,17 @@ export default function CalendarPage() {
     }
   };
 
+  // 获取优先级标签
+  const getPriorityLabel = (priority: string) => {
+    const labels: Record<string, string> = {
+      "P0": "紧急重要",
+      "P1": "紧急不重要",
+      "P2": "重要不紧急",
+      "P3": "不紧急不重要",
+    };
+    return labels[priority] || priority;
+  };
+
   // 导航函数
   const goToPrevious = () => {
     if (view === "month") setCurrentDate(subMonths(currentDate, 1));
@@ -570,18 +581,29 @@ export default function CalendarPage() {
                             {(item as CalendarEvent).eventType}
                           </span>
                         ) : (
-                          <span
-                            className={cn(
+                          <>
+                            <span
+                              className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded",
+                                (item as Task).status === "已完成"
+                                  ? "bg-green-100 text-green-700"
+                                  : (item as Task).status === "有风险"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-blue-100 text-blue-700"
+                              )}
+                            >
+                              {(item as Task).status}
+                            </span>
+                            <span className={cn(
                               "text-[10px] px-1.5 py-0.5 rounded",
-                              (item as Task).status === "已完成"
-                                ? "bg-green-100 text-green-700"
-                                : (item as Task).status === "有风险"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-blue-100 text-blue-700"
-                            )}
-                          >
-                            {(item as Task).status}
-                          </span>
+                              (item as Task).priority === "P0" && "bg-red-100 text-red-700",
+                              (item as Task).priority === "P1" && "bg-amber-100 text-amber-700",
+                              (item as Task).priority === "P2" && "bg-blue-100 text-blue-700",
+                              (item as Task).priority === "P3" && "bg-gray-100 text-gray-600"
+                            )}>
+                              {getPriorityLabel((item as Task).priority)}
+                            </span>
+                          </>
                         )}
                       </div>
                       {"description" in item && item.description && (
@@ -599,10 +621,9 @@ export default function CalendarPage() {
                           <Clock size={12} />
                           {"eventDate" in item
                             ? format(parseISO(item.eventDate), "HH:mm")
-                            : format(
-                                parseISO((item as Task).plannedDate!),
-                                "HH:mm"
-                              )}
+                            : (item as Task).plannedDate
+                            ? format(parseISO((item as Task).plannedDate!), "M月d日 HH:mm")
+                            : "-"}
                         </span>
                         {"project" in item && item.project && (
                           <span className="flex items-center gap-1">
@@ -613,10 +634,27 @@ export default function CalendarPage() {
                         {"assignees" in item &&
                           (item as Task).assignees &&
                           (item as Task).assignees!.length > 0 && (
-                            <span className="flex items-center gap-1">
-                              <User size={12} />
-                              {(item as Task).assignees![0].user.userName}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              {(item as Task).assignees!.slice(0, 3).map((a, i) => (
+                                a.user.avatar ? (
+                                  <img
+                                    key={i}
+                                    src={a.user.avatar}
+                                    alt={a.user.userName}
+                                    className="w-5 h-5 rounded-full object-cover"
+                                    title={a.user.userName}
+                                  />
+                                ) : (
+                                  <div
+                                    key={i}
+                                    className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px]"
+                                    title={a.user.userName}
+                                  >
+                                    {a.user.userName.slice(0, 1)}
+                                  </div>
+                                )
+                              ))}
+                            </div>
                           )}
                       </div>
                     </div>
