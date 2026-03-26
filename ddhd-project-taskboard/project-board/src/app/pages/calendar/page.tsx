@@ -62,6 +62,45 @@ import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 
 type CalendarView = "day" | "week" | "month";
 
+interface Milestone {
+  id: string;
+  name: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  milestones?: Milestone[];
+}
+
+interface TaskDetail {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  description?: string;
+  plannedDate?: string;
+  actualDate?: string;
+  assignees?: {
+    user: {
+      id?: string;
+      userName: string;
+      avatar?: string;
+      role?: string;
+    };
+    role?: string;
+  }[];
+  milestone?: {
+    id?: string;
+    name: string;
+    projectId?: string;
+    project: {
+      id: string;
+      name: string;
+    };
+  };
+}
+
 interface CalendarEvent {
   id: string;
   title: string;
@@ -96,8 +135,8 @@ export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
-  const [milestones, setMilestones] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -168,7 +207,7 @@ export default function CalendarPage() {
       if (data.data) {
         setProjects(data.data);
         // 收集所有里程碑
-        const allMilestones = data.data.flatMap((p: any) => p.milestones || []);
+        const allMilestones = data.data.flatMap((p: Project) => p.milestones || []);
         setMilestones(allMilestones);
       }
     } catch {
@@ -176,7 +215,15 @@ export default function CalendarPage() {
     }
   }, []);
 
-  const handleTaskSubmit = async (taskData: any) => {
+  const handleTaskSubmit = async (taskData: {
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeIds?: string[];
+    milestoneId?: string;
+    status?: string;
+  }) => {
     try {
       let res;
       if (editingTask) {
@@ -973,8 +1020,8 @@ export default function CalendarPage() {
             setSelectedTask(null);
           }
         }}
-        task={selectedTask as any}
-        onEdit={(task: any) => {
+        task={selectedTask as TaskDetail}
+        onEdit={(task: TaskDetail) => {
           setTaskDialogOpen(false);
           setEditingTask({
             id: task.id,
@@ -982,7 +1029,7 @@ export default function CalendarPage() {
             description: task.description,
             priority: task.priority,
             plannedDate: task.plannedDate,
-            assigneeIds: task.assignees?.map((a: any) => a.user.id).filter((id: any) => !!id),
+            assigneeIds: task.assignees?.map((a) => a.user.id).filter((id): id is string => !!id),
             milestoneId: task.milestone?.id,
             status: task.status,
           });
@@ -999,7 +1046,7 @@ export default function CalendarPage() {
         }}
         onSubmit={handleTaskSubmit}
         projects={projects}
-        milestones={projects.flatMap((p: any) => p.milestones || [])}
+        milestones={projects.flatMap((p) => p.milestones || [])}
         submitText={editingTask ? "保存" : "创建"}
         editingTask={editingTask || undefined}
       />

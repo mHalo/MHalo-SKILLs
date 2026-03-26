@@ -53,6 +53,17 @@ interface Task {
   milestone: { name: string; project: { id: string; name: string } };
 }
 
+interface Milestone {
+  id: string;
+  name: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  milestones?: Milestone[];
+}
+
 interface UserDetail extends User {
   assignees: {
     task: Task;
@@ -103,7 +114,7 @@ export default function PeoplePage() {
     role: "",
     openId: "",
   });
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<{
     id: string;
@@ -167,7 +178,15 @@ export default function PeoplePage() {
     }
   };
 
-  const handleTaskSubmit = async (taskData: any) => {
+  const handleTaskSubmit = async (taskData: {
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeIds?: string[];
+    milestoneId?: string;
+    status?: string;
+  }) => {
     try {
       let res;
       if (editingTask) {
@@ -608,7 +627,7 @@ export default function PeoplePage() {
         }}
         onSubmit={handleTaskSubmit}
         projects={projects}
-        milestones={projects.flatMap((p: any) => p.milestones || [])}
+        milestones={projects.flatMap((p) => p.milestones || [])}
         submitText={editingTask ? "保存" : "创建"}
         editingTask={editingTask || undefined}
       />

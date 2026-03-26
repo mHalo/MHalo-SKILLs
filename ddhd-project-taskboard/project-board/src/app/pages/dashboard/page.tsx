@@ -103,49 +103,49 @@ export default function DashboardPage() {
       {/* 统计卡片 - Soft Tech 风格 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="layout-card">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-description mb-1">总项目</p>
               <div className="text-2xl font-bold text-brand-primary">{stats?.projects.total || 0}</div>
             </div>
-            <div className="w-9 h-9 bg-brand-main rounded-md flex items-center justify-center">
-              <FolderOpen size={18} strokeWidth={1.5} className="text-brand-secondary" />
+            <div className="w-12 h-12 bg-brand-main rounded-md flex items-center justify-center">
+              <FolderOpen size={24} strokeWidth={2} className="text-brand-secondary" />
             </div>
           </div>
         </div>
 
         <div className="layout-card">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-description mb-1">进行中</p>
               <div className="text-2xl font-bold text-brand-primary">{stats?.projects.active || 0}</div>
             </div>
-            <div className="w-9 h-9 bg-brand-main rounded-md flex items-center justify-center">
-              <Clock size={18} strokeWidth={1.5} className="text-brand-info" />
+            <div className="w-12 h-12 bg-brand-main rounded-md flex items-center justify-center">
+              <Clock size={24} strokeWidth={2} className="text-brand-info" />
             </div>
           </div>
         </div>
 
         <div className="layout-card">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-description mb-1">已完成</p>
               <div className="text-2xl font-bold text-brand-primary">{stats?.projects.completed || 0}</div>
             </div>
-            <div className="w-9 h-9 bg-brand-main rounded-md flex items-center justify-center">
-              <CheckCircle2 size={18} strokeWidth={1.5} className="text-brand-success" />
+            <div className="w-12 h-12 bg-brand-main rounded-md flex items-center justify-center">
+              <CheckCircle2 size={24} strokeWidth={2} className="text-brand-success" />
             </div>
           </div>
         </div>
 
         <div className="layout-card">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-description mb-1">完成率</p>
               <div className="text-2xl font-bold text-brand-primary">{stats?.tasks.completionRate || 0}%</div>
             </div>
-            <div className="w-9 h-9 bg-brand-main rounded-md flex items-center justify-center">
-              <TrendingUp size={18} strokeWidth={1.5} className="text-brand-warning" />
+            <div className="w-12 h-12 bg-brand-main rounded-md flex items-center justify-center">
+              <TrendingUp size={24} strokeWidth={2} className="text-brand-warning" />
             </div>
           </div>
         </div>

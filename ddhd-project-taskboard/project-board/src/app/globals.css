@@ -12,6 +12,9 @@
   --color-brand-warning: #FF6231;
   --color-brand-info: #637CFF;
   --color-brand-border: #E8EDEC;
+
+  --popover:#FFF;
+  --radius: var(--radius-md);
   
   /* Legacy mappings for compatibility */
   --color-background: var(--color-brand-main);

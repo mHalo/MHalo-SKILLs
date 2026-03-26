@@ -380,7 +380,7 @@ export default function PriorityPage() {
                 description: task.description,
                 priority: task.priority,
                 plannedDate: task.plannedDate,
-                assigneeIds: task.assignees?.map((a: any) => a.user.id).filter((id: any) => !!id) || [],
+                assigneeIds: task.assignees?.map((a) => a.user.id).filter((id) => !!id) || [],
                 milestoneId: task.milestone?.id,
                 status: task.status,
               });
