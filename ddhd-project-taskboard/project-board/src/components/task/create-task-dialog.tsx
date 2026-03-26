@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -19,6 +19,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+// ============= 类型定义 =============
 interface Milestone {
   id: string;
   name: string;
@@ -37,69 +38,73 @@ interface User {
   avatar?: string;
 }
 
+interface TaskFormData {
+  title: string;
+  description?: string;
+  priority: string;
+  plannedDate?: string;
+  assigneeIds?: string[];
+  milestoneId?: string;
+  status?: string;
+}
+
+interface EditingTask {
+  id: string;
+  title: string;
+  description?: string;
+  priority: string;
+  plannedDate?: string;
+  assigneeIds?: string[];
+  milestoneId?: string;
+  status?: string;
+}
+
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (task: {
-    title: string;
-    description?: string;
-    priority: string;
-    plannedDate?: string;
-    assigneeIds?: string[];
-    milestoneId?: string;
-    status?: string;
-  }) => Promise<void> | void;
+  onSubmit: (task: TaskFormData) => Promise<void> | void;
   milestones?: Milestone[];
   projects?: Project[];
   defaultPriority?: string;
   defaultMilestoneId?: string;
   submitText?: string;
-  editingTask?: {
-    id: string;
-    title: string;
-    description?: string;
-    priority: string;
-    plannedDate?: string;
-    assigneeIds?: string[];
-    milestoneId?: string;
-    status?: string;
-  };
+  editingTask?: EditingTask;
 }
 
-export function CreateTaskDialog({
+// ============= 表单状态 Hook =============
+function useTaskForm({
   open,
-  onOpenChange,
-  onSubmit,
-  milestones = [],
-  projects = [],
-  defaultPriority = "P1",
-  defaultMilestoneId = "",
-  submitText = "创建",
   editingTask,
-}: CreateTaskDialogProps) {
-  const [title, setTitle] = useState(editingTask?.title || "");
-  const [description, setDescription] = useState(editingTask?.description || "");
-  const [priority, setPriority] = useState(editingTask?.priority || defaultPriority);
-  const [plannedDate, setPlannedDate] = useState(editingTask?.plannedDate || "");
-  const [projectId, setProjectId] = useState<string>("");
-  const [milestoneId, setMilestoneId] = useState(editingTask?.milestoneId || defaultMilestoneId);
-  const [assignees, setAssignees] = useState<User[]>([]);
-  const [selectedAssignees, setSelectedAssignees] = useState<string[]>(editingTask?.assigneeIds || []);
-  const [assigneeSearch, setAssigneeSearch] = useState<string>("");
-  const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState(editingTask?.status || "待开始");
+  milestones,
+  projects,
+  defaultPriority,
+  defaultMilestoneId,
+}: {
+  open: boolean;
+  editingTask?: EditingTask;
+  milestones: Milestone[];
+  projects: Project[];
+  defaultPriority: string;
+  defaultMilestoneId: string;
+}) {
+  // 表单状态
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState(defaultPriority);
+  const [plannedDate, setPlannedDate] = useState("");
+  const [projectId, setProjectId] = useState(""); // 用户选择的项目
+  const [milestoneId, setMilestoneId] = useState(defaultMilestoneId);
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  const [assigneeSearch, setAssigneeSearch] = useState("");
+  const [status, setStatus] = useState("待开始");
 
-  // 根据选中的项目筛选里程碑
-  const filteredMilestones = projectId
-    ? milestones.filter((m) => {
-        const project = projects.find((p) => p.id === projectId);
-        return project?.milestones?.some((pm) => pm.id === m.id);
-      })
-    : milestones;
+  // 用户列表
+  const [assignees, setAssignees] = useState<User[]>([]);
 
   // 获取用户列表
   useEffect(() => {
+    if (!open) return;
+
     const fetchAssignees = async () => {
       try {
         const res = await fetch("/api/users");
@@ -111,36 +116,157 @@ export function CreateTaskDialog({
         console.error("Failed to fetch users");
       }
     };
-    if (open) {
-      fetchAssignees();
-    }
+    fetchAssignees();
   }, [open]);
 
-  // 重置表单 - 使用 editingTask?.id 作为依赖，避免对象引用变化导致重复渲染
+  // 初始化表单数据
   useEffect(() => {
-    if (open) {
-      if (editingTask) {
-        setTitle(editingTask.title);
-        setDescription(editingTask.description || "");
-        setPriority(editingTask.priority);
-        setPlannedDate(editingTask.plannedDate || "");
-        setMilestoneId(editingTask.milestoneId || defaultMilestoneId);
-        setSelectedAssignees(editingTask.assigneeIds || []);
-        setStatus(editingTask.status || "待开始");
-        setProjectId("");
-      } else {
-        setTitle("");
-        setDescription("");
-        setPriority(defaultPriority);
-        setPlannedDate("");
-        setMilestoneId(defaultMilestoneId);
-        setSelectedAssignees([]);
-        setStatus("待开始");
-        setProjectId("");
-      }
-      setAssigneeSearch("");
+    if (!open) return;
+
+    if (editingTask) {
+      // 编辑模式：填充已有数据
+      setTitle(editingTask.title);
+      setDescription(editingTask.description || "");
+      setPriority(editingTask.priority);
+      setPlannedDate(editingTask.plannedDate || "");
+      setSelectedAssignees(editingTask.assigneeIds || []);
+      setStatus(editingTask.status || "待开始");
+      setMilestoneId(editingTask.milestoneId || "");
+    } else {
+      // 创建模式：重置为默认值
+      setTitle("");
+      setDescription("");
+      setPriority(defaultPriority);
+      setPlannedDate("");
+      setMilestoneId(defaultMilestoneId);
+      setSelectedAssignees([]);
+      setStatus("待开始");
     }
-  }, [open, defaultPriority, defaultMilestoneId, editingTask?.id]);
+    setAssigneeSearch("");
+  }, [open, editingTask?.id, defaultPriority, defaultMilestoneId, editingTask]);
+
+  // 根据 milestoneId 计算 projectId（通过查找包含该里程碑的项目）
+  // 编辑模式下，始终从 milestoneId 派生；创建模式下，只在未选择项目时派生
+  const computedProjectId = useMemo(() => {
+    if (!milestoneId) return "";
+    const project = projects.find(p =>
+      p.milestones?.some((m: Milestone) => m.id === milestoneId)
+    );
+    return project?.id || "";
+  }, [milestoneId, projects]);
+
+  // 编辑模式下，始终同步 projectId 从 computedProjectId
+  // 创建模式下，只有在用户未选择项目时才同步
+  useEffect(() => {
+    const shouldSync = editingTask?.milestoneId
+      ? true  // 编辑模式：始终同步
+      : !projectId;  // 创建模式：仅当未选择项目时同步
+
+    if (computedProjectId && shouldSync) {
+      setProjectId(computedProjectId);
+    }
+  }, [editingTask?.milestoneId, computedProjectId]);
+
+  // 根据选中的项目筛选里程碑
+  const filteredMilestones = useMemo(() => {
+    if (projectId) {
+      return milestones.filter((m) => {
+        const project = projects.find((p) => p.id === projectId);
+        return project?.milestones?.some((pm: Milestone) => pm.id === m.id);
+      });
+    }
+    return milestones;
+  }, [projectId, milestones, projects]);
+
+  // 过滤后的责任人列表
+  const filteredAssignees = assignees.filter((user) =>
+    user.userName.toLowerCase().includes(assigneeSearch.toLowerCase())
+  );
+
+  // 获取表单数据
+  const getFormData = useCallback((): TaskFormData => ({
+    title: title.trim(),
+    description: description.trim() || undefined,
+    priority,
+    plannedDate: plannedDate || undefined,
+    assigneeIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
+    milestoneId: milestoneId || undefined,
+    status,
+  }), [title, description, priority, plannedDate, selectedAssignees, milestoneId, status]);
+
+  // 重置表单
+  const resetForm = useCallback(() => {
+    setTitle("");
+    setDescription("");
+    setPriority(defaultPriority);
+    setPlannedDate("");
+    setMilestoneId(defaultMilestoneId);
+    setSelectedAssignees([]);
+    setStatus("待开始");
+    setProjectId("");
+    setAssigneeSearch("");
+  }, [defaultPriority, defaultMilestoneId]);
+
+  return {
+    // 状态
+    title, setTitle,
+    description, setDescription,
+    priority, setPriority,
+    plannedDate, setPlannedDate,
+    projectId, setProjectId,
+    milestoneId, setMilestoneId,
+    selectedAssignees, setSelectedAssignees,
+    assigneeSearch, setAssigneeSearch,
+    status, setStatus,
+    assignees,
+    filteredMilestones,
+    filteredAssignees,
+    // 方法
+    getFormData,
+    resetForm,
+  };
+}
+
+// ============= 主组件 =============
+export function CreateTaskDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  milestones = [],
+  projects = [],
+  defaultPriority = "P1",
+  defaultMilestoneId = "",
+  submitText,
+  editingTask,
+}: CreateTaskDialogProps) {
+  const isEditMode = !!editingTask;
+  const actualSubmitText = submitText || (isEditMode ? "保存" : "创建");
+
+  const {
+    title, setTitle,
+    description, setDescription,
+    priority, setPriority,
+    plannedDate, setPlannedDate,
+    projectId, setProjectId,
+    milestoneId, setMilestoneId,
+    selectedAssignees, setSelectedAssignees,
+    assigneeSearch, setAssigneeSearch,
+    status, setStatus,
+    assignees,
+    filteredMilestones,
+    filteredAssignees,
+    getFormData,
+  } = useTaskForm({
+    open,
+    editingTask,
+    milestones,
+    projects,
+    defaultPriority,
+    defaultMilestoneId,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -150,35 +276,23 @@ export function CreateTaskDialog({
 
     try {
       setIsSubmitting(true);
-      await onSubmit({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        priority,
-        plannedDate: plannedDate || undefined,
-        assigneeIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
-        milestoneId: milestoneId || undefined,
-        status,
-      });
+      await onSubmit(getFormData());
       onOpenChange(false);
     } catch {
-      toast.error("创建任务失败");
+      toast.error(isEditMode ? "更新任务失败" : "创建任务失败");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const filteredAssignees = assignees.filter((user) =>
-    user.userName.toLowerCase().includes(assigneeSearch.toLowerCase())
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
-          <DialogTitle>{editingTask ? "编辑任务" : "创建任务"}</DialogTitle>
+          <DialogTitle>{isEditMode ? "编辑任务" : "创建任务"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4 px-1 max-h-[60vh] overflow-y-auto">
+        <div className="space-y-2 py-2 px-1 max-h-[60vh] overflow-y-auto">
           {/* 所属项目 - 仅当有项目列表时显示 */}
           {projects.length > 0 && (
             <div className="space-y-2">
@@ -204,7 +318,7 @@ export function CreateTaskDialog({
                         <div
                           key={project.id}
                           className={cn(
-                            "flex items-center px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
+                            "flex items-center px-2 py-1 rounded-md cursor-pointer hover:bg-accent",
                             projectId === project.id && "bg-accent",
                             "mb-1"
                           )}
@@ -249,11 +363,10 @@ export function CreateTaskDialog({
                           key={milestone.id}
                           className={cn(
                             "flex items-center px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
-                            milestoneId === milestone.id && "bg-accent"
+                            milestoneId === milestone.id && "bg-accent",
+                            "mb-1 last-of-type:mb-0"
                           )}
-                          onClick={() => {
-                            setMilestoneId(milestone.id);
-                          }}
+                          onClick={() => setMilestoneId(milestone.id)}
                         >
                           <span className="text-sm">{milestone.name}</span>
                         </div>
@@ -287,266 +400,37 @@ export function CreateTaskDialog({
           </div>
 
           {/* 优先级 */}
-          <div className="space-y-2">
-            <Label>优先级</Label>
-            <div className="flex gap-2">
-                <div className="relative group">
-                  <Button
-                    variant={priority === "P0" ? "default" : "outline"}
-                    size="sm"
-                    className={priority === "P0" ? "bg-[#FF6231] hover:bg-[#FF6231]/90" : ""}
-                    onClick={() => setPriority("P0")}
-                  >
-                    P0
-                  </Button>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    紧急重要
-                  </span>
-                </div>
-                <div className="relative group">
-                  <Button
-                    variant={priority === "P1" ? "default" : "outline"}
-                    size="sm"
-                    className={priority === "P1" ? "bg-[#25B079] hover:bg-[#25B079]/90" : ""}
-                    onClick={() => setPriority("P1")}
-                  >
-                    P1
-                  </Button>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    紧急不重要
-                  </span>
-                </div>
-                <div className="relative group">
-                  <Button
-                    variant={priority === "P2" ? "default" : "outline"}
-                    size="sm"
-                    className={priority === "P2" ? "bg-[#637CFF] hover:bg-[#637CFF]/90" : ""}
-                    onClick={() => setPriority("P2")}
-                  >
-                    P2
-                  </Button>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    重要不紧急
-                  </span>
-                </div>
-                <div className="relative group">
-                  <Button
-                    variant={priority === "P3" ? "default" : "outline"}
-                    size="sm"
-                    className={priority === "P3" ? "bg-[#9CA3AF] hover:bg-[#9CA3AF]/90" : ""}
-                    onClick={() => setPriority("P3")}
-                  >
-                    P3
-                  </Button>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    不重要不紧急
-                  </span>
-                </div>
-              </div>
-            </div>
+          <PrioritySelector priority={priority} onPriorityChange={setPriority} />
 
-            {/* 责任人 */}
-            <div className="flex-1 space-y-2">
-              <Label>责任人</Label>
-              <Popover open={assigneePopoverOpen} onOpenChange={setAssigneePopoverOpen}>
-                <PopoverTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-start text-left font-normal"
-                    />
-                  }
-                >
-                  {selectedAssignees.length > 0
-                    ? `已选择 ${selectedAssignees.length} 人`
-                    : "选择责任人"}
-                </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0 overflow-hidden" align="start">
-                  <Input
-                    placeholder="搜索责任人..."
-                    value={assigneeSearch}
-                    onChange={(e) => setAssigneeSearch(e.target.value)}
-                    className="border-0 border-b rounded-none"
-                  />
-                  <ScrollArea className="h-[200px]">
-                    <div className="p-1">
-                      {filteredAssignees.length === 0 ? (
-                        <p className="py-2 px-2 text-sm text-muted-foreground">未找到责任人</p>
-                      ) : (
-                        filteredAssignees.map((user) => {
-                          const isSelected = selectedAssignees.includes(user.id);
-                          return (
-                            <div
-                              key={user.id}
-                              className={cn(
-                                "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent",
-                                isSelected && "bg-accent"
-                              )}
-                              onClick={() => {
-                                if (isSelected) {
-                                  setSelectedAssignees(selectedAssignees.filter((id) => id !== user.id));
-                                } else {
-                                  setSelectedAssignees([...selectedAssignees, user.id]);
-                                }
-                              }}
-                            >
-                              <div className={cn(
-                                "w-5 h-5 rounded border flex items-center justify-center shrink-0",
-                                isSelected ? "bg-[#637CFF] border-[#637CFF]" : "border-gray-300"
-                              )}>
-                                {isSelected && (
-                                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </div>
-                              <div className="w-6 h-6 rounded-full bg-[#637CFF] flex items-center justify-center text-white text-xs font-medium shrink-0">
-                                {user.userName.charAt(0)}
-                              </div>
-                              <span className="text-sm">{user.userName}</span>
-                              <span className="text-xs text-muted-foreground ml-auto">{user.role}</span>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </ScrollArea>
-                </PopoverContent>
-              </Popover>
-              {/* 已选责任人标签 */}
-              {selectedAssignees.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-1.5">
-                  {selectedAssignees.map((id) => {
-                    const user = assignees.find((u) => u.id === id);
-                    if (!user) return null;
-                    return (
-                      <div
-                        key={id}
-                        className="flex items-center gap-1 bg-[#637CFF]/10 text-[#637CFF] px-2 py-1 rounded-full text-xs"
-                      >
-                        <span>{user.userName}</span>
-                        <button
-                          onClick={() => setSelectedAssignees(selectedAssignees.filter((a) => a !== id))}
-                          className="ml-0.5 hover:bg-[#637CFF]/20 rounded-full p-0.5"
-                        >
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+          {/* 责任人 */}
+          <AssigneeSelector
+            assignees={assignees}
+            filteredAssignees={filteredAssignees}
+            selectedAssignees={selectedAssignees}
+            assigneeSearch={assigneeSearch}
+            assigneePopoverOpen={assigneePopoverOpen}
+            onAssigneeSearchChange={setAssigneeSearch}
+            onAssigneePopoverOpenChange={setAssigneePopoverOpen}
+            onToggleAssignee={(userId) => {
+              if (selectedAssignees.includes(userId)) {
+                setSelectedAssignees(selectedAssignees.filter((id) => id !== userId));
+              } else {
+                setSelectedAssignees([...selectedAssignees, userId]);
+              }
+            }}
+            onRemoveAssignee={(userId) => {
+              setSelectedAssignees(selectedAssignees.filter((id) => id !== userId));
+            }}
+          />
 
           {/* 计划完成节点 */}
-          <div className="space-y-2">
-            <Label>计划完成节点</Label>
-            <div className="flex gap-2">
-              <Popover>
-                <PopoverTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="flex-1 justify-start text-left font-normal"
-                    />
-                  }
-                >
-                  {plannedDate ? (
-                    format(new Date(plannedDate), "yyyy-MM-dd")
-                  ) : (
-                    <span className="text-muted-foreground">选择日期</span>
-                  )}
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={plannedDate ? new Date(plannedDate) : undefined}
-                    onSelect={(date) => {
-                      if (date) {
-                        const currentTime = plannedDate ? format(new Date(plannedDate), "HH:mm:ss") : "12:00:00";
-                        setPlannedDate(format(date, "yyyy-MM-dd") + "T" + currentTime);
-                      } else {
-                        setPlannedDate("");
-                      }
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Input
-                type="time"
-                step="1"
-                defaultValue="12:00:00"
-                className="w-32"
-                disabled={!plannedDate}
-                value={plannedDate ? format(new Date(plannedDate), "HH:mm:ss") : ""}
-                onChange={(e) => {
-                  if (plannedDate) {
-                    const datePart = format(new Date(plannedDate), "yyyy-MM-dd");
-                    setPlannedDate(datePart + "T" + e.target.value);
-                  }
-                }}
-              />
-            </div>
-          </div>
+          <PlannedDateSelector
+            plannedDate={plannedDate}
+            onPlannedDateChange={setPlannedDate}
+          />
 
           {/* 任务状态 */}
-          <div className="space-y-2">
-            <Label>任务状态</Label>
-            <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E8EDEC] p-0.5">
-              <button
-                type="button"
-                className={cn(
-                  "px-3 py-2 text-xs rounded-md transition-all cursor-pointer flex-1",
-                  status === "待开始"
-                    ? "text-white bg-gray-400 "
-                    : "text-[#7E8485] hover:bg-gray-50"
-                )}
-                onClick={() => setStatus("待开始")}
-              >
-                待开始
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  "px-3 py-2 text-xs rounded-md transition-all cursor-pointer flex-1",
-                  status === "进行中"
-                    ? "bg-[#637CFF] text-white"
-                    : "text-[#7E8485] hover:bg-gray-50"
-                )}
-                onClick={() => setStatus("进行中")}
-              >
-                进行中
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  "px-3 py-2 text-xs rounded-md transition-all cursor-pointer flex-1",
-                  status === "有风险"
-                    ? "bg-[#FF6231] text-white"
-                    : "text-[#7E8485] hover:bg-gray-50"
-                )}
-                onClick={() => setStatus("有风险")}
-              >
-                有风险
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  "px-3 py-2 text-xs rounded-md transition-all cursor-pointer flex-1",
-                  status === "已完成"
-                    ? "bg-[#25B079] text-white"
-                    : "text-[#7E8485] hover:bg-gray-50"
-                )}
-                onClick={() => setStatus("已完成")}
-              >
-                已完成
-              </button>
-            </div>
-          </div>
+          <StatusSelector status={status} onStatusChange={setStatus} />
         </div>
 
         <DialogFooter>
@@ -554,10 +438,264 @@ export function CreateTaskDialog({
             取消
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "创建中..." : submitText}
+            {isSubmitting ? "提交中..." : actualSubmitText}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ============= 子组件 =============
+function PrioritySelector({
+  priority,
+  onPriorityChange,
+}: {
+  priority: string;
+  onPriorityChange: (p: string) => void;
+}) {
+  const priorities = [
+    { value: "P0", label: "P0", color: "bg-[#FF6231]", tooltip: "紧急重要" },
+    { value: "P1", label: "P1", color: "bg-[#25B079]", tooltip: "紧急不重要" },
+    { value: "P2", label: "P2", color: "bg-[#637CFF]", tooltip: "重要不紧急" },
+    { value: "P3", label: "P3", color: "bg-[#9CA3AF]", tooltip: "不重要不紧急" },
+  ];
+
+  return (
+    <div className="space-y-2">
+      <Label>优先级</Label>
+      <div className="flex gap-2">
+        {priorities.map((p) => (
+          <div key={p.value} className="relative group">
+            <Button
+              variant={priority === p.value ? "default" : "outline"}
+              size="sm"
+              className={priority === p.value ? `${p.color} hover:${p.color}/90` : ""}
+              onClick={() => onPriorityChange(p.value)}
+            >
+              {p.label}
+            </Button>
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+              {p.tooltip}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AssigneeSelector({
+  assignees,
+  filteredAssignees,
+  selectedAssignees,
+  assigneeSearch,
+  assigneePopoverOpen,
+  onAssigneeSearchChange,
+  onAssigneePopoverOpenChange,
+  onToggleAssignee,
+  onRemoveAssignee,
+}: {
+  assignees: User[];
+  filteredAssignees: User[];
+  selectedAssignees: string[];
+  assigneeSearch: string;
+  assigneePopoverOpen: boolean;
+  onAssigneeSearchChange: (s: string) => void;
+  onAssigneePopoverOpenChange: (o: boolean) => void;
+  onToggleAssignee: (userId: string) => void;
+  onRemoveAssignee: (userId: string) => void;
+}) {
+  return (
+    <div className="flex-1 space-y-2">
+      <Label>责任人</Label>
+      <Popover open={assigneePopoverOpen} onOpenChange={onAssigneePopoverOpenChange}>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="outline"
+              role="combobox"
+              className="w-full justify-start text-left font-normal"
+            />
+          }
+        >
+          {selectedAssignees.length > 0
+            ? `已选择 ${selectedAssignees.length} 人`
+            : "选择责任人"}
+        </PopoverTrigger>
+        <PopoverContent className="w-[280px] p-0 overflow-hidden" align="start">
+          <Input
+            placeholder="搜索责任人..."
+            value={assigneeSearch}
+            onChange={(e) => onAssigneeSearchChange(e.target.value)}
+            className="border-0 border-b rounded-none"
+          />
+          <ScrollArea className="h-[200px]">
+            <div className="p-1">
+              {filteredAssignees.length === 0 ? (
+                <p className="py-2 px-2 text-sm text-muted-foreground">未找到责任人</p>
+              ) : (
+                filteredAssignees.map((user) => {
+                  const isSelected = selectedAssignees.includes(user.id);
+                  return (
+                    <div
+                      key={user.id}
+                      className={cn(
+                        "flex items-center gap-2 px-1 py-1 mt-0.5 rounded-md cursor-pointer hover:bg-accent",
+                        isSelected && "bg-accent"
+                      )}
+                      onClick={() => onToggleAssignee(user.id)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 rounded border flex items-center justify-center shrink-0",
+                          isSelected ? "bg-[#637CFF] border-[#637CFF]" : "border-gray-300"
+                        )}
+                      >
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="w-5 h-5 rounded-full bg-[#637CFF] flex items-center justify-center text-white text-xs font-medium shrink-0">
+                        {user.userName.charAt(0)}
+                      </div>
+                      <span className="text-xs">{user.userName}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">{user.role}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </ScrollArea>
+        </PopoverContent>
+      </Popover>
+
+      {/* 已选责任人标签 */}
+      {selectedAssignees.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {selectedAssignees.map((id) => {
+            const user = assignees.find((u) => u.id === id);
+            if (!user) return null;
+            return (
+              <div
+                key={id}
+                className="flex items-center gap-1 bg-[#637CFF]/10 text-[#637CFF] px-1 py-0.5 rounded-full text-xs"
+              >
+                <span>{user.userName}</span>
+                <button
+                  onClick={() => onRemoveAssignee(id)}
+                  className="ml-0.5 hover:bg-[#637CFF]/20 rounded-full p-0.5"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlannedDateSelector({
+  plannedDate,
+  onPlannedDateChange,
+}: {
+  plannedDate: string;
+  onPlannedDateChange: (d: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>计划完成节点</Label>
+      <div className="flex gap-2">
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                variant="outline"
+                role="combobox"
+                className="flex-1 justify-start text-left font-normal"
+              />
+            }
+          >
+            {plannedDate ? (
+              format(new Date(plannedDate), "yyyy-MM-dd")
+            ) : (
+              <span className="text-muted-foreground">选择日期</span>
+            )}
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={plannedDate ? new Date(plannedDate) : undefined}
+              onSelect={(date) => {
+                if (date) {
+                  const currentTime = plannedDate ? format(new Date(plannedDate), "HH:mm:ss") : "12:00:00";
+                  onPlannedDateChange(format(date, "yyyy-MM-dd") + "T" + currentTime);
+                } else {
+                  onPlannedDateChange("");
+                }
+              }}
+            />
+          </PopoverContent>
+        </Popover>
+        <Input
+          type="time"
+          step="1"
+          defaultValue="12:00:00"
+          className="w-32"
+          disabled={!plannedDate}
+          value={plannedDate ? format(new Date(plannedDate), "HH:mm:ss") : ""}
+          onChange={(e) => {
+            if (plannedDate) {
+              const datePart = format(new Date(plannedDate), "yyyy-MM-dd");
+              onPlannedDateChange(datePart + "T" + e.target.value);
+            }
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatusSelector({
+  status,
+  onStatusChange,
+}: {
+  status: string;
+  onStatusChange: (s: string) => void;
+}) {
+  const statuses = [
+    { value: "待开始", color: "bg-gray-400" },
+    { value: "进行中", color: "bg-[#637CFF]" },
+    { value: "有风险", color: "bg-[#FF6231]" },
+    { value: "已完成", color: "bg-[#25B079]" },
+  ];
+
+  return (
+    <div className="space-y-2">
+      <Label>任务状态</Label>
+      <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E8EDEC] p-0.5">
+        {statuses.map((s) => (
+          <button
+            key={s.value}
+            type="button"
+            className={cn(
+              "px-3 py-1.5 text-xs rounded-md transition-all cursor-pointer flex-1",
+              status === s.value
+                ? `${s.color} text-white`
+                : "text-[#7E8485] hover:bg-gray-50"
+            )}
+            onClick={() => onStatusChange(s.value)}
+          >
+            {s.value}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

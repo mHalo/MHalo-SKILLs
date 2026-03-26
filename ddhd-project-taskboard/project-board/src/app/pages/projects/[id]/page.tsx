@@ -119,6 +119,7 @@ export default function ProjectDetailPage() {
     plannedDate?: string;
     assigneeIds?: string[];
     milestoneId?: string;
+    status?: string;
   } | null>(null);
   const [isCreateMilestoneDialogOpen, setIsCreateMilestoneDialogOpen] = useState(false);
   const [isEditMilestoneDialogOpen, setIsEditMilestoneDialogOpen] = useState(false);
@@ -1023,7 +1024,7 @@ export default function ProjectDetailPage() {
                                 <MoreHorizontal size={14} />
 
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
+                              <DropdownMenuContent align="end" className="w-36">
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setEditingTask({
@@ -1292,6 +1293,19 @@ export default function ProjectDetailPage() {
         onOpenChange={(open) => {
           setIsTaskDialogOpen(open);
           if (!open) setSelectedTask(null);
+        }}
+        onEdit={(task) => {
+          setEditingTask({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            plannedDate: task.plannedDate,
+            assigneeIds: task.assignees?.map((a) => a.user.id).filter((id): id is string => !!id),
+            milestoneId: task.milestone?.id,
+            status: task.status,
+          });
+          setIsCreateDialogOpen(true);
         }}
       />
     </div>

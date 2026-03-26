@@ -56,6 +56,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@base-ui/react";
 import { TaskDetailDialog } from "@/components/task/task-detail-dialog";
+import { CreateTaskDialog } from "@/components/task/create-task-dialog";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
 
@@ -96,10 +97,21 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  const [milestones, setMilestones] = useState<any[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<{
+    id: string;
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeIds?: string[];
+    milestoneId?: string;
+    status?: string;
+  } | null>(null);
 
   // 新建事件表单
   const [newEvent, setNewEvent] = useState({
@@ -151,13 +163,55 @@ export default function CalendarPage() {
 
   const fetchProjects = useCallback(async () => {
     try {
-      const res = await fetch("/api/projects");
+      const res = await fetch("/api/projects?includeDetails=true");
       const data = await res.json();
-      if (data.data) setProjects(data.data);
+      if (data.data) {
+        setProjects(data.data);
+        // 收集所有里程碑
+        const allMilestones = data.data.flatMap((p: any) => p.milestones || []);
+        setMilestones(allMilestones);
+      }
     } catch {
       console.error("获取项目列表失败");
     }
   }, []);
+
+  const handleTaskSubmit = async (taskData: any) => {
+    try {
+      let res;
+      if (editingTask) {
+        // 更新任务 - 使用 PATCH
+        const { assigneeIds, ...updateData } = taskData;
+        const payload = {
+          id: editingTask.id,
+          ...updateData,
+          assignees: assigneeIds?.map((userId: string) => ({ userId })),
+        };
+        res = await fetch("/api/tasks", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // 创建任务 - 使用 POST
+        res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(taskData),
+        });
+      }
+      if (res.ok) {
+        toast.success(editingTask ? "任务已更新" : "任务已创建");
+        setIsCreateDialogOpen(false);
+        setEditingTask(null);
+        fetchCalendarData();
+      } else {
+        toast.error(editingTask ? "更新任务失败" : "创建任务失败");
+      }
+    } catch {
+      toast.error(editingTask ? "更新任务失败" : "创建任务失败");
+    }
+  };
 
   useEffect(() => {
     fetchCalendarData();
@@ -848,10 +902,10 @@ export default function CalendarPage() {
                 <Label>日期</Label>
                 <Popover>
                   <PopoverTrigger className="w-full" render={
-                    <div className="flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer">
+                    <button type="button" className="flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer">
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {newEvent.eventDate ? format(new Date(newEvent.eventDate), "yyyy年M月d日", { locale: zhCN }) : "选择日期"}
-                    </div>
+                    </button>
                   } />
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
@@ -913,8 +967,41 @@ export default function CalendarPage() {
       {/* 任务详情对话框 */}
       <TaskDetailDialog
         open={taskDialogOpen}
-        onOpenChange={setTaskDialogOpen}
-        task={selectedTask}
+        onOpenChange={(open) => {
+          setTaskDialogOpen(open);
+          if (!open) {
+            setSelectedTask(null);
+          }
+        }}
+        task={selectedTask as any}
+        onEdit={(task: any) => {
+          setTaskDialogOpen(false);
+          setEditingTask({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            plannedDate: task.plannedDate,
+            assigneeIds: task.assignees?.map((a: any) => a.user.id).filter((id: any) => !!id),
+            milestoneId: task.milestone?.id,
+            status: task.status,
+          });
+          setIsCreateDialogOpen(true);
+        }}
+      />
+
+      {/* 创建/编辑任务弹窗 */}
+      <CreateTaskDialog
+        open={isCreateDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) setEditingTask(null);
+        }}
+        onSubmit={handleTaskSubmit}
+        projects={projects}
+        milestones={projects.flatMap((p: any) => p.milestones || [])}
+        submitText={editingTask ? "保存" : "创建"}
+        editingTask={editingTask || undefined}
       />
 
       {/* 日程详情对话框 */}

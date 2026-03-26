@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ImageCropDialog } from "@/components/image-crop-dialog";
 import { TaskDetailDialog } from "@/components/task/task-detail-dialog";
+import { CreateTaskDialog } from "@/components/task/create-task-dialog";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { getAvatarColor, getInitials } from "@/lib/avatar-colors";
@@ -102,6 +103,18 @@ export default function PeoplePage() {
     role: "",
     openId: "",
   });
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<{
+    id: string;
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeIds?: string[];
+    milestoneId?: string;
+    status?: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState({
     userName: "",
@@ -115,6 +128,7 @@ export default function PeoplePage() {
 
   useEffect(() => {
     fetchUsers();
+    fetchProjects();
   }, []);
 
   const fetchUsers = async () => {
@@ -138,6 +152,55 @@ export default function PeoplePage() {
       toast.error("获取人员数据失败");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch("/api/projects?includeDetails=true");
+      const data = await res.json();
+      if (data.data) {
+        setProjects(data.data);
+      }
+    } catch {
+      console.error("获取项目数据失败");
+    }
+  };
+
+  const handleTaskSubmit = async (taskData: any) => {
+    try {
+      let res;
+      if (editingTask) {
+        // 更新任务 - 使用 PATCH
+        const { assigneeIds, ...updateData } = taskData;
+        const payload = {
+          id: editingTask.id,
+          ...updateData,
+          assignees: assigneeIds?.map((userId: string) => ({ userId })),
+        };
+        res = await fetch("/api/tasks", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // 创建任务 - 使用 POST
+        res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(taskData),
+        });
+      }
+      if (res.ok) {
+        toast.success(editingTask ? "任务已更新" : "任务已创建");
+        setIsCreateDialogOpen(false);
+        setEditingTask(null);
+        fetchUsers();
+      } else {
+        toast.error(editingTask ? "更新任务失败" : "创建任务失败");
+      }
+    } catch {
+      toast.error(editingTask ? "更新任务失败" : "创建任务失败");
     }
   };
 
@@ -510,11 +573,44 @@ export default function PeoplePage() {
       </div>
 
       {/* 任务详情弹窗 */}
-      {/* 任务详情弹窗 */}
       <TaskDetailDialog
         open={isTaskDialogOpen}
-        onOpenChange={setIsTaskDialogOpen}
+        onOpenChange={(open) => {
+          setIsTaskDialogOpen(open);
+          if (!open) {
+            setSelectedTask(null);
+          }
+        }}
         task={selectedTask}
+        onEdit={(task) => {
+          // 先关闭详情弹窗，打开编辑弹窗
+          setIsTaskDialogOpen(false);
+          setEditingTask({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            plannedDate: task.plannedDate,
+            assigneeIds: task.assignees?.map((a) => a.user.id).filter((id): id is string => !!id),
+            milestoneId: task.milestone?.id,
+            status: task.status,
+          });
+          setIsCreateDialogOpen(true);
+        }}
+      />
+
+      {/* 创建/编辑任务弹窗 */}
+      <CreateTaskDialog
+        open={isCreateDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) setEditingTask(null);
+        }}
+        onSubmit={handleTaskSubmit}
+        projects={projects}
+        milestones={projects.flatMap((p: any) => p.milestones || [])}
+        submitText={editingTask ? "保存" : "创建"}
+        editingTask={editingTask || undefined}
       />
 
       {/* 用户编辑弹窗 */}

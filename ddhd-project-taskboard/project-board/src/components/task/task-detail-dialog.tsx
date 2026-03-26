@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 interface TaskAssignee {
   user: {
+    id?: string;
     userName: string;
     avatar?: string;
     role?: string;
@@ -34,7 +35,9 @@ export interface TaskDetail {
   actualDate?: string;
   assignees?: TaskAssignee[];
   milestone?: {
+    id?: string;
     name: string;
+    projectId?: string;
     project: {
       id: string;
       name: string;
@@ -47,6 +50,7 @@ interface TaskDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   task: TaskDetail | null;
   onStatusChange?: () => void;
+  onEdit?: (task: TaskDetail) => void;
 }
 
 const priorityLabels: Record<string, string> = {
@@ -61,6 +65,7 @@ export function TaskDetailDialog({
   onOpenChange,
   task,
   onStatusChange,
+  onEdit,
 }: TaskDetailDialogProps) {
   if (!task) return null;
 
@@ -219,15 +224,30 @@ export function TaskDetailDialog({
           )}
         </div>
         <DialogFooter className="pt-4">
-          <Button
-            onClick={handleStatusToggle}
-            className={cn(
-              task.status === "已完成" ? "bg-amber-800 hover:bg-amber-600" : "bg-primary/90 hover:bg-primary",
-              "cursor-pointer"
-            )}
-          >
-            {task.status === "已完成" ? "标记为未完成" : "标记为已完成"}
-          </Button>
+          <div className="flex gap-2 w-full justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                // Blur current button and use setTimeout to allow focus to move before dialog closes
+                (document.activeElement as HTMLElement)?.blur();
+                setTimeout(() => {
+                  onEdit?.(task);
+                }, 0);
+              }}
+              className="cursor-pointer"
+            >
+              编 辑
+            </Button>
+            <Button
+              onClick={handleStatusToggle}
+              className={cn(
+                task.status === "已完成" ? "bg-amber-800 hover:bg-amber-600" : "bg-primary/90 hover:bg-primary",
+                "cursor-pointer"
+              )}
+            >
+              {task.status === "已完成" ? "标记为未完成" : "标记为已完成"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

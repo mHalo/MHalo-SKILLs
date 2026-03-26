@@ -88,7 +88,16 @@ export default function PriorityPage() {
   const [newTaskPriority, setNewTaskPriority] = useState<string>("P1");
   const [statusConfirmTask, setStatusConfirmTask] = useState<{ task: Task; newStatus: string } | null>(null);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingTask, setEditingTask] = useState<{
+    id: string;
+    title: string;
+    description?: string;
+    priority: string;
+    plannedDate?: string;
+    assigneeIds?: string[];
+    milestoneId?: string;
+    status?: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -171,13 +180,21 @@ export default function PriorityPage() {
     // 如果是编辑模式
     if (editingTask) {
       try {
-        const res = await fetch(`/api/tasks/${editingTask.id}`, {
-          method: "PUT",
+        const { assigneeIds, ...updateData } = taskData;
+        const payload = {
+          id: editingTask.id,
+          ...updateData,
+          assignees: assigneeIds?.map((userId: string) => ({ userId })),
+        };
+        const res = await fetch("/api/tasks", {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(taskData),
+          body: JSON.stringify(payload),
         });
         if (res.ok) {
           toast.success("任务已更新");
+          setIsCreateDialogOpen(false);
+          setEditingTask(null);
           fetchTasks();
         } else {
           toast.error("更新任务失败");
@@ -356,7 +373,17 @@ export default function PriorityPage() {
             className="shrink-0 text-[#7E8485] hover:text-[#637CFF] transition-colors p-1 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
-              setEditingTask(task);
+              // 转换 task 为编辑格式
+              setEditingTask({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                plannedDate: task.plannedDate,
+                assigneeIds: task.assignees?.map((a: any) => a.user.id).filter((id: any) => !!id) || [],
+                milestoneId: task.milestone?.id,
+                status: task.status,
+              });
             }}
           >
             <Pencil size={14} />
@@ -578,8 +605,8 @@ export default function PriorityPage() {
           description: editingTask.description,
           priority: editingTask.priority,
           plannedDate: editingTask.plannedDate,
-          assigneeIds: editingTask.assignees?.map(a => a.user.userId || a.user.id),
-          milestoneId: editingTask.milestone?.id,
+          assigneeIds: editingTask.assigneeIds,
+          milestoneId: editingTask.milestoneId,
           status: editingTask.status,
         } : undefined}
       />
@@ -613,9 +640,28 @@ export default function PriorityPage() {
       {/* 任务详情弹窗 */}
       <TaskDetailDialog
         open={!!detailTask}
-        onOpenChange={() => setDetailTask(null)}
+        onOpenChange={(open) => {
+          if (!open) setDetailTask(null);
+        }}
         task={detailTask}
         onStatusChange={fetchTasks}
+        onEdit={(task) => {
+          // 先关闭详情弹窗，打开编辑弹窗
+          setDetailTask(null);
+          // 转换 assignees 为 assigneeIds
+          const assigneeIds = task.assignees?.map((a) => a.user.id).filter((id): id is string => !!id) || [];
+          setEditingTask({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            plannedDate: task.plannedDate,
+            assigneeIds,
+            milestoneId: task.milestone?.id,
+            status: task.status,
+          });
+          setIsCreateDialogOpen(true);
+        }}
       />
     </div>
   );
